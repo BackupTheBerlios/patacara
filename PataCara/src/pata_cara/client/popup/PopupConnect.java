@@ -15,6 +15,7 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -27,6 +28,7 @@ import java.awt.image.BufferedImage;
 
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JWindow;
@@ -47,7 +49,10 @@ public class PopupConnect extends JWindow
     this.pseudo = pseudo;
     initialize();
   }
-	/**
+
+  
+  
+  /**
 	 * This method initializes the popup.
 	 * 
 	 * @return void
@@ -136,6 +141,7 @@ public class PopupConnect extends JWindow
  		//On position la fenetre au bon endroit
  		setLocation (largeur, hauteur);
  		setVisible(true);
+ 		//toFront();
  		
  		//La hauteur courante
  		int hauteurCourante = hauteur;
@@ -144,6 +150,8 @@ public class PopupConnect extends JWindow
         while (hauteurCourante > hauteur)
         {
           setLocation(largeur, hauteurCourante);
+         
+          //toFront();
           hauteurCourante -= hauteurDeplacement;
           try
           {
@@ -154,6 +162,7 @@ public class PopupConnect extends JWindow
             e.printStackTrace();
           }
         }
+        toFront();
         //La boucle avant l'effacement du popup (destruction);
         long tpsRestant = delaiAvtEffacement;
         while (tpsRestant > 0)

@@ -35,6 +35,8 @@ import util.jni.windows.flash.FlashWindow;
 import java.io.*;
 import javax.swing.JTextPane;
 
+import pata_cara.client.popup.PopupConnect;
+
 
 public class PataCara extends JFrame implements ActionListener, ChangeListener
 {
@@ -832,13 +834,23 @@ String StrAenvoyer = DIALOGUE                              + Membre.DELIM +
              }
              if (mot.equals (ARRIVANT) && st.countTokens () >= 3)
              {
+               String pseudo = null;
+               System.out.println ("arrivant-----------------------");
              //il y a un nouvel arrivant a inclure dans la liste du salon
-                 salon.salonEst.ListeConnecte.AjouterPseudo (st.nextToken ()
+                 salon.salonEst.ListeConnecte.AjouterPseudo ((pseudo = st.nextToken ())
                                                              /*pseudo*/,
                                                              st.nextToken ()
                                                              /*couleur*/,
                                                              st.nextToken()
                                                              /*toolTip*/);
+                //Popup de nouveau connecté si c'est pas notre pseudo
+                 System.out.println ("pseudo : " + pseudo + ", pseud : " + this.Pseud);
+                if (!pseudo.equals (this.Pseud))
+                {
+                  System.out.println ("lancement popup");
+                  PopupConnect popup = new PopupConnect (pseudo);
+                  popup.movePopup();
+                }
              }
              if (mot.equals (DEPART) && st.countTokens () >= 1)
              {
