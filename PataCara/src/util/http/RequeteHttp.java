@@ -16,7 +16,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.Authenticator;
 import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
@@ -56,6 +58,7 @@ public class RequeteHttp
 
     //création de la connection
     URL url = new URL (adresse);
+//System.out.println (url.getAuthority());
     URLConnection conn = url.openConnection ();
     conn.setDoOutput (true);
 
@@ -69,6 +72,54 @@ public class RequeteHttp
     return conn.getInputStream ();
 
   }
+  
+  /**
+   * Permet d'effectuer une requete HTTP POST sur l'adresse addresse protégé par un fichier htaccess.
+   * @param adresse l'adresse sur laquelle effectuer le doPost.
+   * @param donnees la liste des parametres a donner à la requete :
+   * @param user le nom de l'utilisateur pour la page demandé
+   * @param pass le mot de passe pour l'utilisateur user
+   * ex :
+   * <pre>
+   *   donnees = URLEncoder.encode("clef", "UTF-8")+
+   *             "="+URLEncoder.encode("valeur", "UTF-8");
+   *   donnees += "&"+URLEncoder.encode("autreClef", "UTF-8")+
+   *              "=" + URLEncoder.encode("autreValeur", "UTF-8");
+   * </pre>
+   * @return la connexion établie.
+   * @throws IOException si une quelque chose se passe mal.
+   * 
+   */
+  public static URLConnection getConnexionHttpPost (final String adresse, String donnees, final String user, final String pass) throws IOException
+  {
+
+    if (null != user && null != pass)
+    Authenticator.setDefault (new Authenticator () {
+      protected PasswordAuthentication getPasswordAuthentication ()
+      {
+        return new PasswordAuthentication (user, pass.toCharArray ());
+      }
+    });
+    
+    OutputStreamWriter writer = null;
+
+    //création de la connection
+    URL url = new URL (adresse);
+
+    URLConnection conn = url.openConnection ();
+    conn.setDoOutput (true);
+
+    //envoi de la requête
+    writer = new OutputStreamWriter (conn.getOutputStream ());
+    writer.write (donnees);
+    writer.flush ();
+
+    writer.close ();
+
+    return conn;
+  }
+  
+  
 
   /**
    * Ajoute aux données initiales le parametre newParam et sa valeur Value.
@@ -112,11 +163,11 @@ public class RequeteHttp
     String donnee = "";
     try
     {
-      donnee = encodeParametreRequete (donnee, "val", "12");
+      donnee = encodeParametreRequete (donnee, "valeur", "12");
       donnee = encodeParametreRequete (donnee, "test", "toto");
       System.out.println ("donne?" + donnee);
       
-      InputStream in = doPost("http://patachou.dyndns.org/patacara/serveur/ModifEtatServeur.php", donnee);
+      InputStream in = doPost("http://patachou:57yZYJAp@localhost/patacara/serveur/ModifEtatServeur.php", donnee);
       //lecture de la réponse
       BufferedReader reader = null;
       reader = new BufferedReader (new InputStreamReader (in));
