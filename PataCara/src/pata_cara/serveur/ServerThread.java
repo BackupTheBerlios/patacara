@@ -2,6 +2,7 @@ package pata_cara.serveur;
 
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 
 
 /**
@@ -25,10 +26,20 @@ class ServerThread extends Thread
     {
         this.setServerSocket (socket);
         this.setServer (server);
+try
+{
+  System.out.println ("ServerThread constructeur, reuse addresse ? " + serverSocket.getReuseAddress());
+  serverSocket.setReuseAddress(true);
+}
+catch (SocketException e)
+{
+  e.printStackTrace();
+}
     } /* ServerThread () */
 
     public void run ()
     {
+System.out.println ("ServeurThread DEMARRE (" + Thread.currentThread().getName() + ")");
         //Socket pour la conection avec le client
         Socket clientSocket = null;
         try
@@ -45,8 +56,8 @@ class ServerThread extends Thread
         {
             System.err.println ("L'exception suivante est intervenue : " + e);
             e.printStackTrace();
-            return;
         }
+System.out.println ("ServeurThread TERMINE (" + Thread.currentThread().getName() + ")");
     } /* run () */
 
     private void setServer (Server tempServer)

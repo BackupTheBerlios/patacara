@@ -16,6 +16,8 @@ import pata_cara.client.PataCara;
 import java.net.Socket;
 import java.util.StringTokenizer;
 
+import org.apache.xpath.compiler.PsuedoNames;
+
 class ClientThread extends Thread
 {
     Socket clientSocket  = null;
@@ -40,6 +42,7 @@ class ClientThread extends Thread
 
     public void run ()
     {
+System.out.println ("ClientThread DEMARRE (" + Thread.currentThread().getName() + ") -> " + Pseu);
         java.lang.String data = null;
         try
         {
@@ -119,11 +122,10 @@ class ClientThread extends Thread
                 {
                     System.err.println("L'exception suivante est intervenue dans run ClientThread, arret brutal d'un client (JVM_recv in...) : " + Exc);
                 }
-                return;
             }
             //si l'exception est la suivante : Connection reset by peer: JVM_recv in socket input stream read
             //on informe au server d'une deconnection du client!
-            if (e.getMessage ().equals("Connection reset"))
+            else if (e.getMessage ().equals("Connection reset"))
             {
               System.err.println("Arret brutal du client : " + Pseu);
               try
@@ -137,13 +139,14 @@ class ClientThread extends Thread
               {
                   System.err.println("L'exception suivante est intervenue dans run ClientThread, arret brutal d'un client (connection reset : " + Exc);
               }
-              return;
-
             }
-            System.err.println ("L'exception suivante est intervenue dans run ClientThread : " + e);
-            e.printStackTrace();
-            return;
+            else
+            {
+              System.err.println ("L'exception suivante est intervenue dans run ClientThread : " + e);
+              e.printStackTrace();
+            }
         }
+System.out.println ("ClientThread terminé (" + Thread.currentThread().getName() + ") -> " + Pseu);
     } /* run () */
 
     private void setServer (Server tempServer)

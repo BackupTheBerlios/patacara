@@ -15,9 +15,16 @@ import pata_cara.client.PataCara;
 import pata_cara.client.Main;
 import pata_cara.client.Dialogue;
 import java.net.ServerSocket;
+import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.Socket;
+import java.util.Date;
 import java.util.StringTokenizer;
 
 
@@ -35,6 +42,8 @@ public class Server
     private static final int NBLIGNESALON = 10;
     private String [] ligneSalon = new String [NBLIGNESALON];
     private int nbLigne = 0;
+    
+    private static final String FICHIER_LOG_ERREUR = "log" + File.separator + "log_erreur.txt";
 
 
     public Server ()
@@ -57,6 +66,7 @@ public class Server
       try
       {
         serverSocket.close();
+        serverThread.interrupt();
       }
       catch (IOException e)
       {
@@ -134,16 +144,16 @@ public class Server
        new Server ();
    } /* main () */
 
-    public void removeConnection (Socket socket, String Pseudo)
+    public void removeConnection (Socket socket, String pseudo)
     {
-        effacerPseudo (Pseudo);
+        effacerPseudo (pseudo);
         // detruire dans les tableaux la personne
         try
         {
             for (int i = 0; i < client; ++i)
             {
                 tabOut [i].writeBytes (PataCara.DEPART + Membre.DELIM +
-                                       Pseudo + "\n");
+                                       pseudo + "\n");
                 tabOut [i].flush ();
             }
         }
@@ -194,67 +204,67 @@ public class Server
         System.out.println ("Le serveur a été démarré avec succès");
     } /* start () */
 
-   public DataOutputStream getReceveur (String Pseudo)
+   public DataOutputStream getReceveur (String pseudo)
    {
        //fonction qui renvoie le bon flux de sortie
-       return tabOut [chercheRang (Pseudo)];
+       return tabOut [chercheRang (pseudo)];
    } /* GetReceveur () */
 
 
    /**
     * Cherche la position du pseudo Pseudo dans le tableau de pseudo.
-    * @param Pseudo le pseudo qu'on recherche dans le tableau.
+    * @param pseudo le pseudo qu'on recherche dans le tableau.
     * @return l'indice (position ou rang) du pseudo dans le tableau,
     * -1 si pas trouvé.
     */
-   public int chercheRang (String Pseudo)
+   public int chercheRang (String pseudo)
    {
-       boolean Trouve = false;
+       boolean trouve = false;
        int i = 0;
        for (; i < client; ++i)
        {
-           if (tabPseudo [i].equals (Pseudo))
+           if (tabPseudo [i].equals (pseudo))
            {
-               Trouve = true;
+               trouve = true;
                break;
            }
        }
-       if (! Trouve)
-       {   System.out.println ("L'indice du pseudo " + Pseudo +
+       if (! trouve)
+       {   System.out.println ("L'indice du pseudo " + pseudo +
            " n'as pas ete trouve dans la fonction ChercheRang");
            i = -1;
        }
        return i;
    } /* ChercheRang () */
 
-   synchronized void  ajouterPseudo (String Nom,
+   synchronized void  ajouterPseudo (String nom,
        								 DataOutputStream out,
-       								 String Couleur,
+       								 String couleur,
        								 String toolTip)
    {
-       int pos = rechercherIndice (Nom);
+       int pos = rechercherIndice (nom);
 
        if (client == 0 || client == pos)
        {
-           tabPseudo  [client] = Nom;
+           tabPseudo  [client] = nom;
            tabOut     [client] = out;
-           tabPseuCou [client] = Couleur;
+           tabPseuCou [client] = couleur;
            tabToolTip [client] = toolTip;
        }
        else
        {
-           String Temp1 = tabPseudo [pos];
-           String Temp2 = null;
-           tabPseudo [pos] = Nom;
+           String temp1 = tabPseudo [pos];
+           String temp2 = null;
+           tabPseudo [pos] = nom;
 //pareil pour TabOut
-            DataOutputStream T1 = tabOut [pos];
-            DataOutputStream T2 = null;
+            DataOutputStream t1 = tabOut [pos];
+            DataOutputStream t2 = null;
             tabOut [pos] = out;
 
 //pareil pour TabPseuCou
-            String Cou2       = null;
-            String Cou1       = tabPseuCou [pos];
-            tabPseuCou [pos]  = Couleur;
+            String cou2       = null;
+            String cou1       = tabPseuCou [pos];
+            tabPseuCou [pos]  = couleur;
 
 //pareil pour toolTip
             String tool2      = null;
@@ -264,37 +274,37 @@ public class Server
 
            for (int i = pos+1; i < client; ++i)
            {
-               Temp2          = tabPseudo [i];
-               tabPseudo [i]  = Temp1;
-               Temp1          = Temp2;
+               temp2          = tabPseudo [i];
+               tabPseudo [i]  = temp1;
+               temp1          = temp2;
 //pareil pour TabOut
-               T2             = tabOut [i];
-               tabOut [i]     = T1;
-               T1             = T2;
+               t2             = tabOut [i];
+               tabOut [i]     = t1;
+               t1             = t2;
 //pareil pour TabPseuCou
-               Cou2           = tabPseuCou [i];
-               tabPseuCou [i] = Cou1;
-               Cou1           = Cou2;
+               cou2           = tabPseuCou [i];
+               tabPseuCou [i] = cou1;
+               cou1           = cou2;
 //pareil pour TabToolTip
                tool2          = tabToolTip [i];
                tabToolTip [i] = tool1;
                tool1          = tool2;
             }
-            tabPseudo  [client] = Temp1;
-            tabOut     [client] = T1;
-            tabPseuCou [client] = Cou1;
+            tabPseudo  [client] = temp1;
+            tabOut     [client] = t1;
+            tabPseuCou [client] = cou1;
             tabToolTip [client] = tool1;
       }
       ++client;
   } /* AjouterPseudo () */
 
-  private int rechercherIndice (String Nom)
+  private int rechercherIndice (String nom)
   {
     int i;
 
     for (i = 0; i < client; ++i)
     {
-         if ( Nom.compareTo(tabPseudo [i]) < 0)
+         if ( nom.compareTo(tabPseudo [i]) < 0)
               break;
     }
      return i;
@@ -320,9 +330,9 @@ public class Server
         return client;
     }
 
-    public void traitementText (String Message)
+    public void traitementText (String message)
     {
-        StringTokenizer st = new StringTokenizer (Message, Membre.DELIM);
+        StringTokenizer st = new StringTokenizer (message, Membre.DELIM);
         if (!st.hasMoreTokens ())
         {
             //System.out.println ("Erreur lors de la reception du string dans la fonction1 : TraitementText");
@@ -333,12 +343,12 @@ public class Server
         // on regarde si c'est pour le salon
         if (mot.equals (PataCara.SALON) && st.countTokens () > 5)
         {
-            sauvegardeSalon (Message);
+            sauvegardeSalon (message);
             try
             {
                 for (int i = 0; i < client; ++i)
                 {
-                    tabOut [i].writeBytes (Message + "\n");
+                    tabOut [i].writeBytes (message + "\n");
                     tabOut [i].flush ();
                 }
             }
@@ -355,28 +365,28 @@ public class Server
         {
             try
             {
-                String Recept = st.nextToken ();
-                int rang = chercheRang (Recept);
+                String recept = st.nextToken ();
+                int rang = chercheRang (recept);
                 if (-1 == rang)
                 {
                     //Le recepteur n'est plus connecté
                     //il faut prevenir le recepteur
-                    String Emeteur = st.nextToken ();
-                           Emeteur = st.nextToken ();
-                           Emeteur = st.nextToken ();
-                    int ind = chercheRang (Emeteur);
+                    String emeteur = st.nextToken ();
+                           emeteur = st.nextToken ();
+                           emeteur = st.nextToken ();
+                    int ind = chercheRang (emeteur);
                     if (-1 == ind) // l'emeteur du message n'a pas été trouvé
                     {
-                      System.err.println("On ne peut pas prevenir '" + Emeteur +
-                                         "' que '" + Recept + " est déconnecté\n");
+                      System.err.println("On ne peut pas prevenir '" + emeteur +
+                                         "' que '" + recept + " est déconnecté\n");
                       return;
                     }
                     //L'emeteur est bien là.
                     tabOut [ind].writeBytes (PataCara.DIALOGUE     + Membre.DELIM +
-                                             Recept                 + Membre.DELIM +
+                                             recept                 + Membre.DELIM +
                                              Dialogue.Couleur   [1] + Membre.DELIM +
                                              Dialogue.ListStyle [3] + Membre.DELIM +
-                                             Recept                 + Membre.DELIM +
+                                             recept                 + Membre.DELIM +
                                              Dialogue.Couleur [1]   + Membre.DELIM +
                                              "deconecté(e)"         + Membre.DELIM +
                                              "est deconnecté(e)"    + "\n");
@@ -384,7 +394,7 @@ public class Server
                 }
                 else
                 {
-                    tabOut [rang].writeBytes (Message + "\n");
+                    tabOut [rang].writeBytes (message + "\n");
                     tabOut [rang].flush ();
                 }
             }
@@ -432,10 +442,10 @@ public class Server
 
 
     //fonction qui sauvegarde les lignes du salon
-    public void sauvegardeSalon (String Ligne)
+    public void sauvegardeSalon (String ligne)
     {
         if (nbLigne < NBLIGNESALON)
-            ligneSalon [nbLigne++] = Ligne;
+            ligneSalon [nbLigne++] = ligne;
         else
         {
             //la premiere ligne doit partir
@@ -443,19 +453,56 @@ public class Server
             {
                 ligneSalon [i] = ligneSalon [i+1];
             }
-            ligneSalon [NBLIGNESALON -1] = Ligne;
+            ligneSalon [NBLIGNESALON -1] = ligne;
         }
    }/* SauvegardeSalon () */
 
-   public boolean estPseudoConnecter (String Pseudo)
+   public boolean estPseudoConnecter (String pseudo)
    {
        for (int i = 0; i < client; ++i)
        {
-           if (tabPseudo [i].equals (Pseudo))
+           if (tabPseudo [i].equals (pseudo))
                return true;
        }
        return false;
     } /* EstPseudoConnecter () */
+   
+   
+   
+   /**
+    * Fonction qui sert a loger une exception dans un fichier
+    * @param nomFichier nom du fichier avec path
+    * @param message le message a mettre avant l'erreur
+    * @param exc l'exception dont on veut mettre la stacktrace dans le fichier, peut etre null.
+    */
+   private static void log (String nomFichier, String message, Throwable exc)
+   {
+     try
+    {
+      PrintStream stream = new PrintStream (new BufferedOutputStream (new FileOutputStream (nomFichier, true)));
+      stream.println(new Date ().toString () + message);
+      if (null != exc)
+        exc.printStackTrace(stream);
+      stream.flush();
+      stream.close();
+      
+    }
+    catch (FileNotFoundException e)
+    {
+      e.printStackTrace();
+    }
+   }
+   
+   /**
+    * Fonction qui sert a loger les erreur du serveur PataCara.
+    * Les erreurs sont stockées dans le répertoire log.
+    * @param message
+    * @param exc
+    */
+   public void logErreur (String message, Throwable exc)
+   {
+     log (FICHIER_LOG_ERREUR, message, exc);
+   }
 
 
 } // Classe Serveur

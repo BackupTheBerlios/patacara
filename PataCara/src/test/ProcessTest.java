@@ -22,6 +22,8 @@ import java.util.Date;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
+import pata_cara.serveur.Server;
+
 import util.http.RequeteHttp;
 
 
@@ -44,6 +46,7 @@ public class ProcessTest
   private static final long DELAI_ATTENTE_MYSQLD = 10000L;
   private String pidMysqld = null;
   private String ip = null;
+  private Server serveurPataCara = null;
   
   
   public ProcessTest ()
@@ -55,11 +58,17 @@ public class ProcessTest
   {
     ProcessTest test = new ProcessTest ();
     test.startMysqld();
+    test.lanceServeurPataCara();
     
-    test.waitDeconnection();
-    test.stopMysqld();
-    
-    System.out.println ("Main terminé");
+    while (true)
+    {
+      test.waitDeconnection();
+      test.stopMysqld();
+      test.stopServeurPataCara();
+      test.startMysqld();
+      test.lanceServeurPataCara();
+    }
+    //System.out.println ("Main terminé");
   }
   
   
@@ -153,7 +162,7 @@ System.out.println ("");
     }
     //On mémorise l'ip ou est lancé le serveur mysqld
     ip = getIP ();
-    logger.info("SERVEUR LANCERRRRRRRRRRRRRRRRR sur IP : " + ip);    
+    logger.info("SERVEUR MYSQLD LANCERRRRRRRRRRRRRRRRR sur IP : " + ip);    
 
     //On récupére la liste de tous les mysqld lancé 
     ArrayList listPidMysqldEnd = getAllPidMysqld();
@@ -176,6 +185,35 @@ System.out.println ("");
       }
     }
     logger.info ("PID TROUVER : " + pidMysqld);
+  }
+  
+  public void lanceServeurPataCara ()
+  {
+    new Thread () 
+    {
+      /**
+       * @see java.lang.Thread#run()
+       */
+      public void run ()
+      {
+        serveurPataCara = new Server ();
+      }
+       
+    }.start();
+    System.out.println ("Serveur PataCara Lancé");
+  }
+  
+  
+//  public void relanceServeurPataCara ()
+//  {
+//    serveurPataCara.stopServer();
+//    System.out.println ("Stop serveur PataCara");
+//    lanceServeurPataCara();
+//  }
+  
+  public void stopServeurPataCara ()
+  {
+    serveurPataCara.stopServer();    
   }
   
   
