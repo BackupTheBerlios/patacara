@@ -48,7 +48,6 @@ public class RequeteHttp
       throws IOException
   {
     OutputStreamWriter writer = null;
-    BufferedReader reader = null;
     //encodage des paramètres de la requête
     //       String donnees = URLEncoder.encode("clef", "UTF-8")+
     //                         "="+URLEncoder.encode("valeur", "UTF-8");
@@ -69,12 +68,6 @@ public class RequeteHttp
 
     return conn.getInputStream ();
 
-    //lecture de la réponse
-    //       reader = new BufferedReader(new
-    // InputStreamReader(conn.getInputStream()));
-    //       String ligne;
-    //       while ((ligne = reader.readLine()) != null) {
-    //          System.out.println(ligne);
   }
 
   /**
@@ -89,6 +82,8 @@ public class RequeteHttp
   public static String encodeParametreRequete (String donneeInitiale, String newParam, String newValue, String encodage) throws IOException
   {
     StringBuffer res = new StringBuffer (donneeInitiale);
+    if (donneeInitiale.length() != 0)
+      res.append ("&");
     res.append (URLEncoder.encode(newParam, encodage));
     res.append ("=");
     res.append (URLEncoder.encode(newValue, encodage));
@@ -106,13 +101,35 @@ public class RequeteHttp
    */
   public static String encodeParametreRequete (String donneeInitiale, String newParam, String newValue) throws IOException
   {
-    return encodeParametreRequete (donneeInitiale, newParam, newParam, "UTF-8");
+    return encodeParametreRequete (donneeInitiale, newParam, newValue, "UTF-8");
     /* encodeParametreRequete () */
   }
 
 
   
   public static void main (String [] args)
-  {}
+  {
+    String donnee = "";
+    try
+    {
+      donnee = encodeParametreRequete (donnee, "val", "12");
+      donnee = encodeParametreRequete (donnee, "test", "toto");
+      System.out.println ("donne?" + donnee);
+      
+      InputStream in = doPost("http://patachou.dyndns.org/patacara/serveur/ModifEtatServeur.php", donnee);
+      //lecture de la réponse
+      BufferedReader reader = null;
+      reader = new BufferedReader (new InputStreamReader (in));
+      String ligne;
+      while ((ligne = reader.readLine ()) != null)
+      {
+        System.out.println (ligne);
+      }
+    }
+    catch (IOException e)
+    {
+      e.printStackTrace();
+    }
+  }
 }
  // Classe RequeteHttp
