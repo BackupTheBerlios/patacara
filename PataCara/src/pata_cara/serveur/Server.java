@@ -25,7 +25,7 @@ import pata_cara.client.Dialogue;
 import pata_cara.client.Main;
 import pata_cara.client.Membre;
 import pata_cara.client.PataCara;
-import test.ServicePataCara;
+import pata_cara.serveur.windows.ServicePataCara;
 import util.http.RequeteHttp;
 
 

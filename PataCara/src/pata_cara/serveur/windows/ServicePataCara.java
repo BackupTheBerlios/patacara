@@ -8,13 +8,12 @@
  *
  * 
  */
-package test;
+package pata_cara.serveur.windows;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -22,22 +21,17 @@ import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.StringTokenizer;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
-import java.util.logging.StreamHandler;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.WindowConstants;
 
 import pata_cara.serveur.Server;
-
 import util.http.RequeteHttp;
 
 
