@@ -66,6 +66,11 @@ public class ControleurFenetreImp
       systray.ajouteFenetrePataCara (newFenetre);//Ajout de la fenetre à la systray.
       toBackMain(appli);
       setVisible(appli, false);
+      
+      //On initialise le flah qui est opérationnel sur ce system
+      newFenetre.initFlashWindow();
+      newFenetre.startFlashFenetrePataCara();
+
     }
     else //Gestion sans systray
     {
@@ -281,6 +286,19 @@ public class ControleurFenetreImp
 
 
 
+  public void startFlashPataCara (PataCara fenetrePata)
+  {
+
+  /* startFlashPataCara () */
+  }
+  public void stopFlashPataCara (PataCara fenetrePata)
+  {
+
+  /* stopFlashPataCara () */
+  }
+  
+  
+  
   private class controleFocusPataCara implements WindowListener
   {
     /**

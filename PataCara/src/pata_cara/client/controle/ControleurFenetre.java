@@ -88,6 +88,19 @@ public interface ControleurFenetre
    * @param fenetrePata la fenetre qui souhaite être affichée en arrière plan.
    */
   public void tonBackPataCara (PataCara fenetrePata);
+  
+  
+  /**
+   * La fenêtre fenetrePata souhaite se voir clignoter.
+   * @param fenetrePata la fenetre concernée.
+   */
+  public void startFlashPataCara (PataCara fenetrePata);
+  
+  /**
+   * La fenêtre fenetrePata souhaite ne plus clignoter.
+   * @param fenetrePata la fenetre concernée.
+   */
+  public void stopFlashPataCara (PataCara fenetrePata);
 
 
 } // Interface ControleurFenetre

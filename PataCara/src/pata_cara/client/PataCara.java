@@ -30,45 +30,50 @@ import java.util.StringTokenizer;
 import java.awt.event.ActionEvent;
 import java.io.InputStreamReader;
 import util.gui.Boite;
+import util.jni.windows.flash.FlashWindow;
+
 import java.io.*;
 import javax.swing.JTextPane;
 
 
 public class PataCara extends JFrame implements ActionListener, ChangeListener
 {
-    int nbChateur = 0;
-    Dialogue tableChateur [] = new Dialogue [Main.MAX_MEMBRES];
-    private String   ListeIgnorer [] = new String   [Main.MAX_MEMBRES];
-    JTabbedPane panneauOnglet;
-    String Pseud;
-    Salon salon;
-    public static final String SALON     = "Salon";
-    public static final String DIALOGUE  = "dialogue";
-    public static final String ARRIVANT  = "arrivant";
-    public static final String DEPART    = "depart";
-    public static final String IGNORER   = "Ignorer";
-    public static final String INFO      = "Info";
-    public static final String FALSE     = "false";
-    Membre membre;
-    String toolTip;
+  public static final String SALON     = "Salon";
+  public static final String DIALOGUE  = "dialogue";
+  public static final String ARRIVANT  = "arrivant";
+  public static final String DEPART    = "depart";
+  public static final String IGNORER   = "Ignorer";
+  public static final String INFO      = "Info";
+  public static final String FALSE     = "false";
 
-    //static final String      HOST         = "patachou.dyndns.org";
-    static final String      HOST         = "localhost";
-    private Socket           clientSocket = null;
-    private DataOutputStream out          = null;
-    private BufferedReader   in           = null;
+  public static final String      HOST         = "patachou.dyndns.org";
+  //static final String      HOST         = "localhost";
 
-    Main appli = null;
+  static final int NumFicheInfo          = 1;
+  static final int NumFicheSalon         = 2;
+  static final int NumFicheFirstDialogue = 3; /* Indice de la premiere fiche qui peut etre un dialogue */
+  static final int TAILLEMAXMSG          = 150; // taille maximum d'un message
+  static       Color COULEUR_FICHE_NEW = Color.yellow; // La couleur des fiches quand nouveau message
+
+  private int nbChateur = 0;
+  private Dialogue tableChateur [] = new Dialogue [Main.MAX_MEMBRES];
+  private String   ListeIgnorer [] = new String   [Main.MAX_MEMBRES];
+  private JTabbedPane panneauOnglet;
+  private String Pseud;
+  private Salon salon;
+  private Membre membre;
+  private String toolTip;
+
+  private Socket           clientSocket = null;
+  private DataOutputStream out          = null;
+  private BufferedReader   in           = null;
+
+  private Main appli = null;
+  private FlashWindow flashFenetrePataCara = null;
 
 
    private int NbIgnorer = 0;
-   Info info;
-   static final int NumFicheInfo          = 1;
-   static final int NumFicheSalon         = 2;
-   static final int NumFicheFirstDialogue = 3; /* Indice de la premiere fiche qui peut etre un dialogue */
-   static final int TAILLEMAXMSG          = 150; // taille maximum d'un message
-
-   static Color COULEUR_FICHE_NEW = Color.yellow; // La couleur des fiches quand nouveau message
+   private Info info;
 
 
   public PataCara(Main application, String Pseudo, Membre membre)
@@ -201,6 +206,7 @@ public class PataCara extends JFrame implements ActionListener, ChangeListener
       appli.removeBarDefilement();
       appli.destroyeBarDefilement();
 
+      
       //Affichage de la fenetre
       setVisible (true);
 
@@ -981,4 +987,32 @@ String StrAenvoyer = DIALOGUE                              + Membre.DELIM +
        }
        return false;
    } // Est
-   }
+   
+   /**
+    * Initialisation du flashWindow pour la fenetre. Cette méthode sera appelée par le controleur de fenetre si le systeme d'exploitation le permet.
+    *
+    */
+   public void initFlashWindow ()
+  {
+     //Création du gestionnaire pour le clignotement de la fenetre
+     flashFenetrePataCara = new FlashWindow (this);
+  } /* initFlashWindow () */
+   
+   /**
+    * Fait clignoter la fenetre. Cette méthode sera appelée par le controleur de fenetre si le systeme d'exploitation le permet.
+    *
+    */
+   public void startFlashFenetrePataCara ()
+   {
+     flashFenetrePataCara.startFlash();
+   } /* startFlashFenetrePatacara () */
+
+   /**
+    * Fait arreter de clignoter la fenetre. Cette méthode sera appelée par le controleur de fenetre si le systeme d'exploitation le permet.
+    *
+    */
+   public void stopFlashFenetrePataCara ()
+  {
+    flashFenetrePataCara.stopFlash ();
+  } /* stopFlashFenetrePataCara () */
+}
