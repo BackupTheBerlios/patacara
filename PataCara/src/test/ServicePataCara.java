@@ -1,5 +1,5 @@
 /**
- * <p>Title: ProcessTest.java</p>.
+ * <p>Title: ServicePataCara.java</p>.
  * <p>Copyright: Copyright (c) 2005</p>.
  * @author Rémy GIRAUD
  * @version 1.0
@@ -10,7 +10,11 @@
  */
 package test;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -20,7 +24,17 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.StringTokenizer;
+import java.util.logging.FileHandler;
+import java.util.logging.Handler;
+import java.util.logging.LogManager;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.StreamHandler;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.WindowConstants;
 
 import pata_cara.serveur.Server;
 
@@ -28,10 +42,10 @@ import util.http.RequeteHttp;
 
 
 /**
- * <p>Classe : ProcessTest</p>.
+ * <p>Classe : ServicePataCara</p>.
  * <p>Description: </p>.
  */
-public class ProcessTest
+public class ServicePataCara
 {
   private static String TASKLIST = "tasklist /FO CSV /FI \"IMAGENAME eq mysqld.exe\"";
   private static String TASKKILL = "taskkill /F /PID ";
@@ -40,7 +54,40 @@ public class ProcessTest
   private static long INTERVAL_CHECK_IP = 10000L; // 10secondes interval pour se connecter
   private static final long INTERVAL_CHECK_DECONNECTION = 60000L; //1min interval pour détecter une déconnexion
   
-  private static Logger logger = Logger.getLogger("test.ProcessTest");
+  /* Le LOGGER_INFO d'information qui va loger les infos erreur dans un fichier */
+  public static Logger LOGGER_INFO = null;
+  public static Logger LOGGER_ERREUR = null;
+  static
+  {    
+    LOGGER_INFO = Logger.getLogger("ServicePataCara.info");
+    LOGGER_ERREUR = Logger.getLogger ("ServicePataCara.erreur");
+    Handler fileHandler;
+    try
+    {
+      //fileHandler = new StreamHandler (new FileOutputStream (Server.FICHIER_LOG_INFO), new SimpleFormatter ());
+      fileHandler = new FileHandler (Server.FICHIER_LOG_INFO, true);
+      fileHandler.setFormatter(new SimpleFormatter ());
+      LOGGER_INFO.addHandler(fileHandler);
+      //fileHandler = new StreamHandler (new FileOutputStream (Server.FICHIER_LOG_ERREUR), new SimpleFormatter ());
+      fileHandler = new FileHandler (Server.FICHIER_LOG_ERREUR, true);
+      fileHandler.setFormatter(new SimpleFormatter ());
+      LOGGER_ERREUR.addHandler(fileHandler);
+    }
+    catch (FileNotFoundException e)
+    {
+      e.printStackTrace();
+    }
+    catch (SecurityException e)
+    {
+      e.printStackTrace();
+    }
+    catch (IOException e)
+    {
+      e.printStackTrace();
+    }
+    
+
+  }
   
   private volatile boolean isOkMysqld; /* quand on lance mysqld, cette variable sera mis a false en cas d'echec */
   private static final long DELAI_ATTENTE_MYSQLD = 10000L;
@@ -49,26 +96,99 @@ public class ProcessTest
   private Server serveurPataCara = null;
   
   
-  public ProcessTest ()
+  public ServicePataCara ()
   {
     isOkMysqld = true;
   }
+  
 
-  public static void main (String [] args) throws Exception
+  public static void main (String [] args) throws IOException 
   {
-    ProcessTest test = new ProcessTest ();
-    test.startMysqld();
-    test.lanceServeurPataCara();
-    
-    while (true)
+
+    ServicePataCara service = new ServicePataCara ();
+    Thread t = Thread.currentThread();
+    try
     {
-      test.waitDeconnection();
-      test.stopMysqld();
-      test.stopServeurPataCara();
-      test.startMysqld();
-      test.lanceServeurPataCara();
+      service.testAenlever(t);
+      //System.out.println ("Main terminé");
     }
+    catch (InterruptedException e)
+    {
+      e.printStackTrace();
+    }
+    System.out.println ("Terminé");
+  }
+  
+  public void testAenlever (final Thread t) throws IOException, InterruptedException
+  {
+    JFrame f = new JFrame ("test");
+    f.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+    JButton but = new JButton ("stop");
+
+    but.addActionListener(new ActionListener () {
+
+    public void actionPerformed (ActionEvent e)
+    {
+      stopServicePataCara(t);
+      System.out.println ("Stop handler");
+      
+      /* actionPerformed () */
+    }}); 
+    f.getContentPane().add(but);
+    f.pack();
+    f.setVisible(true);
+
+    startServicePataCara();
     //System.out.println ("Main terminé");
+    
+  }
+  
+  /**
+   * Lance le service PataCara.
+   *
+   */
+  public void startServicePataCara ()
+  {
+    try
+    {
+      startMysqld();
+      Server.informeSiteStopServeur(); //On stoppe le dernier serveur si besoin
+      lanceServeurPataCara();
+      while (true)
+      {
+        waitDeconnection();
+        stopMysqld();
+        stopServeurPataCara();
+        
+        //reconnexion
+        waitConnectionEstablish ();
+        Server.informeSiteStopServeur(); //On a été déconnecté, on é de nouveau connecté et on peut informé que le serveur est arreter avant d'essayer d'en relancer un autre.
+        startMysqld();
+        lanceServeurPataCara();
+      }
+    }
+    catch (IOException e)
+    {
+      e.printStackTrace();
+    }
+    catch (InterruptedException e)
+    {
+      e.printStackTrace();
+    }
+    LOGGER_INFO.info("Fin startServicePataCara");
+  }
+  
+  /**
+   * Arrete le service PataCara.
+   *
+   */
+  public void stopServicePataCara (Thread threadCourant)
+  {
+    Server.informeSiteStopServeur();
+    stopMysqld();
+    stopServeurPataCara();
+    //On envoi une execption interupt pour arreter les threads
+    threadCourant.interrupt();
   }
   
   
@@ -87,7 +207,7 @@ public class ProcessTest
    * @return
    * @throws IOException
    */
-  public static String waitConnectionEstablish () throws IOException
+  public static String waitConnectionEstablish () throws IOException, InterruptedException
   {
     String ip = null;
     while (true)
@@ -98,35 +218,30 @@ public class ProcessTest
       try
       {
         conn = RequeteHttp.getConnexionHttpPost ("http://www.google.fr");
-        logger.info ("reponse : " + conn.getResponseCode ());
+        LOGGER_INFO.info ("reponse : " + conn.getResponseCode ());
         break;
       }
       catch (java.net.ConnectException e)
       {
-        logger.severe("Exception ConnectException : " + e.getMessage());
+        LOGGER_INFO.severe("Exception ConnectException : " + e.getMessage());
       }
+      Thread.sleep (500);
     }
     return ip;
   }
   
   /**
    * Attente d'une déconnection d'internet.
+   * @throws InterruptedException
    *
    */
-  public void waitDeconnection ()
+  public void waitDeconnection () throws InterruptedException
   {
     while (getIP ().equals (ip))
     {
-      try
-      {
         Thread.sleep (INTERVAL_CHECK_DECONNECTION);
-      }
-      catch (InterruptedException e)
-      {
-        e.printStackTrace();
-      }
     }
-    logger.info("Déconnexion survenue");
+    LOGGER_INFO.info("Déconnexion survenue");
   }
   
   /**
@@ -138,18 +253,14 @@ public class ProcessTest
   {
     //On récupére la liste de tous les mysqld lancé avant de lancer le notre
     ArrayList listPidMysqldStart = getAllPidMysqld();
-System.out.println ("Nbr pid : " + listPidMysqldStart.size());
+LOGGER_INFO.info ("Nbr pid : " + listPidMysqldStart.size());
+String pidList = null;
 for (int i = 0; i < listPidMysqldStart.size (); ++i)
 {
-System.out.print (listPidMysqldStart.get (i) + ",");  
+  pidList = listPidMysqldStart.get (i) + ",";  
 }
-System.out.println ("");
-
-//On lance le notre
-//    runMysqld();
-//    
-//    // On attend un certain temps (tps = tps considérer pour avoir un message d'erreur
-//    Thread.sleep(DELAI_ATTENTE_MYSQLD);
+if (null != pidList)
+LOGGER_INFO.info (pidList);
 
 	isOkMysqld = false;
 
@@ -162,7 +273,7 @@ System.out.println ("");
     }
     //On mémorise l'ip ou est lancé le serveur mysqld
     ip = getIP ();
-    logger.info("SERVEUR MYSQLD LANCERRRRRRRRRRRRRRRRR sur IP : " + ip);    
+    LOGGER_INFO.info("SERVEUR MYSQLD LANCERRRRRRRRRRRRRRRRR sur IP : " + ip);    
 
     //On récupére la liste de tous les mysqld lancé 
     ArrayList listPidMysqldEnd = getAllPidMysqld();
@@ -173,7 +284,7 @@ System.out.println ("");
     {
       list = listPidMysqldEnd.get (i) + ",";  
     }
-	logger.info("liste pid trouvé apres lancement :  "+ list);
+	LOGGER_INFO.info("liste pid trouvé apres lancement :  "+ list);
 
 	//On cherche a trouver le pid lancé
     for (int i = 0; i < listPidMysqldEnd.size(); ++i)
@@ -184,7 +295,7 @@ System.out.println ("");
         break;
       }
     }
-    logger.info ("PID TROUVER : " + pidMysqld);
+    LOGGER_INFO.info ("PID TROUVER : " + pidMysqld);
   }
   
   public void lanceServeurPataCara ()
@@ -200,20 +311,15 @@ System.out.println ("");
       }
        
     }.start();
-    System.out.println ("Serveur PataCara Lancé");
+    LOGGER_INFO.info ("Serveur PataCara Lancé");
   }
   
   
-//  public void relanceServeurPataCara ()
-//  {
-//    serveurPataCara.stopServer();
-//    System.out.println ("Stop serveur PataCara");
-//    lanceServeurPataCara();
-//  }
   
   public void stopServeurPataCara ()
   {
-    serveurPataCara.stopServer();    
+    if (null != serveurPataCara)
+      serveurPataCara.stopServer();    
   }
   
   
@@ -286,7 +392,7 @@ afficheMsg(p.getErrorStream());
     String ipNow = getIP ();
     while (!isConnectedToInternet())
     {
-logger.info("IP : " + ipNow);
+LOGGER_INFO.info("IP : " + ipNow);
       try
       {
         Thread.sleep (INTERVAL_CHECK_IP);
@@ -364,7 +470,7 @@ logger.info("IP : " + ipNow);
     {
       while (null != (line = outBuff.readLine()))
       {
-        System.out.println ("" + new Date () + " Line : " + line);
+        LOGGER_INFO.info (" Line : " + line);
         break;
       }
     }
@@ -387,7 +493,7 @@ logger.info("IP : " + ipNow);
     {
       p = run.exec(TASKKILL + pid);
       int exitCode = p.waitFor();
-logger.info (TASKKILL + pid + " : executé");
+LOGGER_INFO.info (TASKKILL + pid + " : executé");
 afficheMsg(p.getErrorStream());
     }
     catch (IOException e)
@@ -404,4 +510,4 @@ afficheMsg(p.getErrorStream());
   
   
 }
- // Classe ProcessTest
+ // Classe ServicePataCara

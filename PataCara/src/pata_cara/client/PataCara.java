@@ -51,17 +51,17 @@ public class PataCara extends JFrame implements ActionListener, ChangeListener
   public static final String      HOST         = "patachou.dyndns.org";
   //static final String      HOST         = "localhost";
 
-  static final int NumFicheInfo          = 1;
-  static final int NumFicheSalon         = 2;
-  static final int NumFicheFirstDialogue = 3; /* Indice de la premiere fiche qui peut etre un dialogue */
+  static final int NUM_FICHE_INFO          = 1;
+  static final int NUM_FICHE_SALON         = 2;
+  static final int NUM_FICHE_FIRST_DIALOGUE = 3; /* Indice de la premiere fiche qui peut etre un dialogue */
   static final int TAILLEMAXMSG          = 150; // taille maximum d'un message
   static       Color COULEUR_FICHE_NEW = Color.yellow; // La couleur des fiches quand nouveau message
 
   private int nbChateur = 0;
   private Dialogue tableChateur [] = new Dialogue [Main.MAX_MEMBRES];
-  private String   ListeIgnorer [] = new String   [Main.MAX_MEMBRES];
+  private String   listeIgnorer [] = new String   [Main.MAX_MEMBRES];
   private JTabbedPane panneauOnglet;
-  private String Pseud;
+  private String pseud;
   private Salon salon;
   private Membre membre;
   private String toolTip;
@@ -74,13 +74,13 @@ public class PataCara extends JFrame implements ActionListener, ChangeListener
   private FlashWindow flashFenetrePataCara = null;
 
 
-   private int NbIgnorer = 0;
+   private int nbIgnorer = 0;
    private Info info;
 
 
-  public PataCara(Main application, String Pseudo, Membre membre)
+  public PataCara(Main application, String pseudo, Membre membre)
   {
-      super ("Bienvenue " + Pseudo + " sur Pata_Cara");
+      super ("Bienvenue " + pseudo + " sur Pata_Cara");
       try {
         setIconImage (new ImageIcon (getClass ().getResource ("/images/Main.gif")).
                       getImage ());
@@ -89,7 +89,7 @@ public class PataCara extends JFrame implements ActionListener, ChangeListener
       //getContentPane ().setBackground (/*Color.black*/new Color (245, 245, 227));
       this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
-      this.Pseud = Pseudo;
+      this.pseud = pseudo;
       this.membre = membre;
       this.appli = application;
 
@@ -102,7 +102,7 @@ public class PataCara extends JFrame implements ActionListener, ChangeListener
 
       this.toolTip = "" + membre.anneeNaissance + ","
                      + (membre.homme ? "H" : "F") + ","
-                     + membre.ville  + "," + Pseudo
+                     + membre.ville  + "," + pseudo
                      + "@pata_cara.com";
 
       panneauOnglet = new JTabbedPane ();
@@ -145,7 +145,7 @@ public class PataCara extends JFrame implements ActionListener, ChangeListener
            }
       });
 
-      panneauOnglet.setSelectedIndex(NumFicheSalon);
+      panneauOnglet.setSelectedIndex(NUM_FICHE_SALON);
 
       JLabel Logo = new JLabel (new ImageIcon (getClass ().getResource("/images/logo.jpg")));
       getContentPane ().add (Logo, BorderLayout.NORTH);
@@ -156,7 +156,7 @@ public class PataCara extends JFrame implements ActionListener, ChangeListener
       {
         public void windowClosing (WindowEvent e)
         {
-             System.out.println("déconexion de " + Pseud);
+             System.out.println("déconexion de " + pseud);
           //on prévient le controlleur qu'on veut fermer la fenetre.
           appli.getControleFenetre().closeFenetrePataCara(getThis());
         }
@@ -178,7 +178,7 @@ public class PataCara extends JFrame implements ActionListener, ChangeListener
 
         case 1 :
           appli.getBarDefilement().stopProgress();
-          Boite.message(this, "Annulation", "Le pseudo " + Pseud +
+          Boite.message(this, "Annulation", "Le pseudo " + pseud +
                                       " est déja connecté");
           appli.getBarDefilement().setValue(0);
           appli.removeBarDefilement();
@@ -240,7 +240,7 @@ public class PataCara extends JFrame implements ActionListener, ChangeListener
    */
   public String getPseudo ()
   {
-    return Pseud;
+    return pseud;
   } /* getPseudo() */
 
 
@@ -266,19 +266,19 @@ public class PataCara extends JFrame implements ActionListener, ChangeListener
 
       public void actionPerformed(ActionEvent e)
       {
-        int Fiche = panneauOnglet.getSelectedIndex();
+        int fiche = panneauOnglet.getSelectedIndex();
 
 
         if (e.getActionCommand().equals(Dialogue.Terminer))
         {
-              Terminer (Fiche);
+              terminer (fiche);
         }
         else if (e.getActionCommand().equals(Dialogue.Envoie))
         {
-          if (SALON == panneauOnglet.getTitleAt(Fiche))
-              EnvoieSalon ();
+          if (SALON == panneauOnglet.getTitleAt(fiche))
+              envoieSalon ();
           else
-              EnvoieDial (Fiche);
+              envoieDial (fiche);
         }
         else if (e.getActionCommand().equals(SalonEst.Dialoguer))
         {
@@ -286,35 +286,35 @@ public class PataCara extends JFrame implements ActionListener, ChangeListener
         }
         else if (e.getActionCommand().equals(SalonEst.Ignorer))
         {
-          if (SALON == panneauOnglet.getTitleAt(Fiche))
+          if (SALON == panneauOnglet.getTitleAt(fiche))
           {
             //System.out.println ("on a appuyer sur Ignorer dans le salon");
-              String Pseudo = null;
-              if (null == (Pseudo = (String) (salon.salonEst.ListeConnecte.
+              String pseudo = null;
+              if (null == (pseudo = (String) (salon.salonEst.ListeConnecte.
                                     getSelectedValue())))
               //pas de pseudo selectionner
               return;
               //un pseudo est selectionner
-              EnvoieIgnorerServeur (Pseudo);
+              envoieIgnorerServeur (pseudo);
 
           }
           else
           {
             //System.out.println ("on a appuyer sur Ignorer dans un dialogue");
-            EnvoieIgnorerServeur (panneauOnglet.getTitleAt(Fiche));
+            envoieIgnorerServeur (panneauOnglet.getTitleAt(fiche));
             //on ferme le dialogue
-            Terminer (Fiche);
+            terminer (fiche);
           }
         }
         else if ((! e.getActionCommand().equals(Dialogue.Envoie)) &&
-                 (SALON == panneauOnglet.getTitleAt(Fiche)))
+                 (SALON == panneauOnglet.getTitleAt(fiche)))
         {
-            EnvoieSalon ();
+            envoieSalon ();
         }
         else
         {
-            if (SALON != panneauOnglet.getTitleAt(Fiche))
-                EnvoieDial (Fiche);
+            if (SALON != panneauOnglet.getTitleAt(fiche))
+                envoieDial (fiche);
         }
    } /* actionPerformed () */
 
@@ -379,12 +379,12 @@ public class PataCara extends JFrame implements ActionListener, ChangeListener
 
 
 
-   Dialogue getDialogue (String Pseudo)
+   Dialogue getDialogue (String pseudo)
    {
       int i = 0;
       for (; i < nbChateur; ++i)
       {
-        if (Pseudo.equals (tableChateur[i].Nom)) break;
+        if (pseudo.equals (tableChateur[i].Nom)) break;
       }
       //attention pas gerer si pas trouver
       return tableChateur [i];
@@ -422,14 +422,14 @@ salon.salonEst.ListeConnecte.removeSelectionInterval(salon.salonEst.ListeConnect
       panneauOnglet.setSelectedComponent(temp);
     } /* Dialoguer () */
 
-    private void Terminer (int Fiche)
+    private void terminer (int fiche)
     {
       //on eleve dans notre tab de chatteur celui a qui on veut plus parler
-      String Nom = panneauOnglet.getTitleAt(Fiche);
+      String nom = panneauOnglet.getTitleAt(fiche);
       int i = 0;
       for (; i < nbChateur; ++i)
       {
-        if (Nom.equals (tableChateur[i].Nom)) break;
+        if (nom.equals (tableChateur[i].Nom)) break;
       }
       for (; i < nbChateur - 1; ++i)
       {
@@ -438,12 +438,12 @@ salon.salonEst.ListeConnecte.removeSelectionInterval(salon.salonEst.ListeConnect
       --nbChateur;
 
       //on enleve la fiche de la personne de la fenetre et on met le salon comme fiche courante
-      panneauOnglet.removeTabAt(Fiche);
-      panneauOnglet.setSelectedIndex(NumFicheSalon);
+      panneauOnglet.removeTabAt(fiche);
+      panneauOnglet.setSelectedIndex(NUM_FICHE_SALON);
 
     } /* Terminer () */
 
-    private void EnvoieSalon ()
+    private void envoieSalon ()
     {
      //on a appuyer sur Envoie dans le salon
 
@@ -460,10 +460,10 @@ salon.salonEst.ListeConnecte.removeSelectionInterval(salon.salonEst.ListeConnect
       }
       salon.salonOuest.textField.setText("");
       //on recupere la couleur a afficher pour le salon
-String CouEnv = salon.salonOuest.ListChoixCouleur.getSelectedItem ().toString ();
-      Color CouleurText = getColor (CouEnv);
+String couEnv = salon.salonOuest.ListChoixCouleur.getSelectedItem ().toString ();
+      Color CouleurText = getColor (couEnv);
       //on recupere le style
-      String StyleText = salon.salonOuest.ListChoixStyle.getSelectedItem ().toString ();
+      String styleText = salon.salonOuest.ListChoixStyle.getSelectedItem ().toString ();
 
 //construction du string que l'on va envoyer avec
 // 0 le lieux concerné (salon, dialogue, info...)
@@ -476,9 +476,9 @@ String CouEnv = salon.salonOuest.ListChoixCouleur.getSelectedItem ().toString ()
 
 // ATTENTION LE TOOLTIP NE DOIT PAS CONTENIR D'ESPACES !
 
-String StrAenvoyer = SALON + Membre.DELIM + CouEnv
-                           + Membre.DELIM + StyleText
-                           + Membre.DELIM + Pseud  + Membre.DELIM
+String strAenvoyer = SALON + Membre.DELIM + couEnv
+                           + Membre.DELIM + styleText
+                           + Membre.DELIM + pseud  + Membre.DELIM
                            + (membre.homme ? Dialogue.Couleur [7] :
                                              Dialogue.Couleur [5])
                            + Membre.DELIM      + toolTip
@@ -489,7 +489,7 @@ String StrAenvoyer = SALON + Membre.DELIM + CouEnv
       //a tout le salon
       try
       {
-          out.writeBytes (StrAenvoyer + "\n");
+          out.writeBytes (strAenvoyer + "\n");
           out.flush ();
       }
       catch (java.io.IOException e)
@@ -502,14 +502,14 @@ String StrAenvoyer = SALON + Membre.DELIM + CouEnv
     /**
      * Envoie le message qui provient de la fiche n° Fiche (dialogue) au serveur
      * et l'affiche dans la fiche du dialogue concerné.
-     * @param Fiche le numéro de la fiche de l'onglet (= dialogue concerné par le message).
+     * @param fiche le numéro de la fiche de l'onglet (= dialogue concerné par le message).
      */
-    private void EnvoieDial (int Fiche)
+    private void envoieDial (int fiche)
    {
       //on recupere la fiche dialogue de l'emeteur
-      Dialogue Emetteur = getDialogue (panneauOnglet.getTitleAt(Fiche));
+      Dialogue emetteur = getDialogue (panneauOnglet.getTitleAt(fiche));
       //on recupere toutes les infos neccessaire couleur text style
-      String text = Emetteur.textField.getText();
+      String text = emetteur.textField.getText();
       //Si pas de texte on sort
       if (0 == text.length())
         return;
@@ -521,13 +521,13 @@ String StrAenvoyer = SALON + Membre.DELIM + CouEnv
       //Si que des blancs on sort
       if (0 == text.trim().length())
       {
-        Emetteur.textField.setText ("");
+        emetteur.textField.setText ("");
         return;
       }
 
-      Object CouleurText = Emetteur.ListChoixCouleur.getSelectedItem ();
-      Object StyleText = Emetteur.ListChoixStyle.getSelectedItem ();
-      Color CoulLis = getColor (CouleurText.toString ());
+      Object couleurText = emetteur.ListChoixCouleur.getSelectedItem ();
+      Object styleText = emetteur.ListChoixStyle.getSelectedItem ();
+      Color coulLis = getColor (couleurText.toString ());
 
 
 //preparation du string a  envoyer au serveur
@@ -544,11 +544,11 @@ String StrAenvoyer = SALON + Membre.DELIM + CouEnv
 // ATTENTION LE TOOLTIP NE DOIT PAS CONTENIR D'ESPACES !
 
 
-String StrAenvoyer = DIALOGUE                              + Membre.DELIM +
-                     panneauOnglet.getTitleAt (Fiche)      + Membre.DELIM +
-                     CouleurText                           + Membre.DELIM +
-                     StyleText.toString ()                 + Membre.DELIM +
-                     Pseud                                 + Membre.DELIM +
+String strAenvoyer = DIALOGUE                              + Membre.DELIM +
+                     panneauOnglet.getTitleAt (fiche)      + Membre.DELIM +
+                     couleurText                           + Membre.DELIM +
+                     styleText.toString ()                 + Membre.DELIM +
+                     pseud                                 + Membre.DELIM +
                     (membre.homme ? Dialogue.Couleur [7] :
                                     Dialogue.Couleur [5])  + Membre.DELIM +
                      toolTip                               + Membre.DELIM +
@@ -556,16 +556,16 @@ String StrAenvoyer = DIALOGUE                              + Membre.DELIM +
 //envoie au serveur
       try
       {
-          out.writeBytes (StrAenvoyer + "\n");
+          out.writeBytes (strAenvoyer + "\n");
           out.flush ();
 
 
           // envoie dans la zone de texte de l'emeteur
                //on peut changer ici la couleur du pseudo pour pas confondre
-         envoyerMessageDialogue (Emetteur, Pseud, text,
+         envoyerMessageDialogue (emetteur, pseud, text,
                          membre.homme ? getColor ("bleu") : getColor ("rose"),
-                         CoulLis, StyleText.toString (), toolTip, false);
-         Emetteur.textField.setText ("");
+                         coulLis, styleText.toString (), toolTip, false);
+         emetteur.textField.setText ("");
 
       }
       catch (java.io.IOException e)
@@ -586,7 +586,7 @@ String StrAenvoyer = DIALOGUE                              + Membre.DELIM +
      * @param toolTip le toolTip qui sera associé au message.
      * @param Bold si le message doit etre en gras.
      */
-    private static void EnvoyerMessage (String pseudo, JTextPane textPane, String text,
+    private static void envoyerMessage (String pseudo, JTextPane textPane, String text,
                                  Color CouPseudo, Color TextCoul, String style,
                                  String toolTip, boolean Bold)
     {
@@ -618,7 +618,7 @@ String StrAenvoyer = DIALOGUE                              + Membre.DELIM +
     {
 
       dialConcerne.getGestionLigneTextPane ().verifNbrLigneTextPane ();
-      PataCara.EnvoyerMessage (pseudo, dialConcerne.textPane, text, CouPseudo,
+      PataCara.envoyerMessage (pseudo, dialConcerne.textPane, text, CouPseudo,
                                TextCoul,
                                style, toolTip, bold);
       dialConcerne.getGestionLigneTextPane ().
@@ -649,7 +649,7 @@ String StrAenvoyer = DIALOGUE                              + Membre.DELIM +
     {
 
       salon.getGestionLigneTextPane ().verifNbrLigneTextPane ();
-      PataCara.EnvoyerMessage (pseudo, salon.textPane, text, CouPseudo,
+      PataCara.envoyerMessage (pseudo, salon.textPane, text, CouPseudo,
                                TextCoul,
                                style, toolTip, bold);
       salon.getGestionLigneTextPane ().
@@ -663,53 +663,53 @@ String StrAenvoyer = DIALOGUE                              + Membre.DELIM +
 
 
 
-    static public Color getColor (String CouleurText)
+    static public Color getColor (String couleurText)
     {
       int pos = 0;
-       Color CoulLis;
+       Color coulLis;
       for (; pos < Dialogue.nbCouleur; ++pos)
       {
-		if (Dialogue.Couleur[pos].equals (CouleurText))
+		if (Dialogue.Couleur[pos].equals (couleurText))
                    break;
        }
        switch (pos)
        {
          case 0:
-           CoulLis = Color.black;
+           coulLis = Color.black;
            break;
          case 1:
-           CoulLis = Color.red;
+           coulLis = Color.red;
            break;
          case 2:
-           CoulLis = new Color (82, 175, 37); /*Color.green;*/
+           coulLis = new Color (82, 175, 37); /*Color.green;*/
            break;
          case 3:
-           CoulLis = new Color (242, 188, 2) /*Color.yellow*/;
+           coulLis = new Color (242, 188, 2) /*Color.yellow*/;
            break;
          case 4:
-           CoulLis = Color.lightGray;
+           coulLis = Color.lightGray;
            break;
          case 5:
-           CoulLis = new Color (207, 33, 181); /*Color.pink;*/
+           coulLis = new Color (207, 33, 181); /*Color.pink;*/
            break;
          case 6:
-           CoulLis = new Color (221, 147, 23); /*Color.orange;*/
+           coulLis = new Color (221, 147, 23); /*Color.orange;*/
            break;
          case 7:
-           CoulLis = Color.blue;
+           coulLis = Color.blue;
            break;
 
          default:
            System.err.println ("probleme niveau couleur");
-           CoulLis = Color.black;
+           coulLis = Color.black;
        }
-        return CoulLis;
+        return coulLis;
    } /* getColor () */
 
 // fontion qui traite l'arrivée d'un message
-   public void ReceptionTexte (String Message)
+   public void ReceptionTexte (String message)
    {
-              StringTokenizer st = new StringTokenizer (Message, Membre.DELIM);
+              StringTokenizer st = new StringTokenizer (message, Membre.DELIM);
               if (!st.hasMoreTokens ())
               {
                    //System.out.println ("Erreur lors de la reception du string dans la fonction ReceptionTexte");
@@ -739,9 +739,9 @@ String StrAenvoyer = DIALOGUE                              + Membre.DELIM +
                      Color couleurPseudo = getColor (st.nextToken ());
                      String tool = st.nextToken ();
 
-                     String txt = Message.substring (Message.indexOf (tool) + tool.length () +
+                     String txt = message.substring (message.indexOf (tool) + tool.length () +
                                                      1,
-                                                     Message.length ());
+                                                     message.length ());
 
                      envoyerMessageSalon (salon.salonOuest, pseudoAenv, txt, couleurPseudo,
                                      couleur, style, tool, false);
@@ -779,10 +779,10 @@ String StrAenvoyer = DIALOGUE                              + Membre.DELIM +
 
                    Color couleurPseudo = getColor (st.nextToken ());
                    String tool = st.nextToken ();
-                   String txt = Message.substring (
-                                                   Message.indexOf (tool)
+                   String txt = message.substring (
+                                                   message.indexOf (tool)
                                                    + tool.length () +1,
-                                                   Message.length ());
+                                                   message.length ());
 
 
             //verification de l'onglet emmetteur pour le recepteur
@@ -808,7 +808,7 @@ String StrAenvoyer = DIALOGUE                              + Membre.DELIM +
                 // recherche de l'indice de la fiche de l'emeteur chez le recepteur
                 // attention si on ajoute une rubrique info i = 3
                 int index = 0;
-                for (int i = NumFicheFirstDialogue; i < panneauOnglet.getTabCount(); ++i)
+                for (int i = NUM_FICHE_FIRST_DIALOGUE; i < panneauOnglet.getTabCount(); ++i)
                 {
                    if (pseudoAenv.equals (panneauOnglet.getTitleAt(i)))
                    {
@@ -844,8 +844,8 @@ String StrAenvoyer = DIALOGUE                              + Membre.DELIM +
                                                              st.nextToken()
                                                              /*toolTip*/);
                 //Popup de nouveau connecté si c'est pas notre pseudo
-                 System.out.println ("pseudo : " + pseudo + ", pseud : " + this.Pseud);
-                if (!pseudo.equals (this.Pseud))
+                 System.out.println ("pseudo : " + pseudo + ", pseud : " + this.pseud);
+                if (!pseudo.equals (this.pseud))
                 {
                   System.out.println ("lancement popup");
                   PopupConnect popup = new PopupConnect (pseudo);
@@ -860,41 +860,49 @@ String StrAenvoyer = DIALOGUE                              + Membre.DELIM +
              // on regarde si c'est pour l'info
             if (mot.equals (INFO))
             {
-                String Txt = Message.substring (
-                                        Message.indexOf (INFO)
+                String txt = message.substring (
+                                        message.indexOf (INFO)
                                         + INFO.length () +1,
-                                        Message.length ());
+                                        message.length ());
 
-            //Si l'on souhaite juste insérer du texte sans smiley ou label
-            //dialogue.addMessage (info.textPane, Txt + dialogue.newline,
-            //                     dialogue.ListStyle [3],
-            //                     getColor (dialogue.Couleur   [1]);
-
-            //Si l'on souhaite avoir un text label
-                try
-                {
-                Dialogue.addTextLabel (info.getTextPane (),
-                                       Txt + " " +
+                envoyerMessageInfo (txt + " " +
                                        Dialogue.TabSmileyRepr [1] +
                                        " "/* + dialogue.newline*/,
                                        Dialogue.ListStyle [3],
                                        Color.red,
                                        "Message d'information");
-                 }
-                 catch (java.lang.NullPointerException E)
-                 {
-                     System.err.println ("erreur dans recttextinfo : " + E);
-                 }
-            //On vérifie la fiche courante et on la met en jaune si neccesaire
-                if (panneauOnglet.getSelectedIndex() != NumFicheInfo)
-                {
-                  changeCouleurOnglet (NumFicheInfo, COULEUR_FICHE_NEW);
-                }
 
           }
 
 
    } /* ReceptionTexte () */
+   
+
+   /**
+    * Envoi le message message dans l'onglet info avec le style style la couleur
+    * de text couleur, et le toolTip toolTip. Si l'onglet info n'est pas actif
+    * alors on change sa couleur.
+    * 
+    * @param message le message qui sera affiché dans l'onglet info.
+    * @param style le style de la police d'affichage.
+    * @param couleur la couleur du message.
+    * @param toolTip le toolTip associé.
+    */
+  public void envoyerMessageInfo (String message, String style,
+      Color couleur, String toolTip)
+  {
+    Dialogue.addTextLabel (info.getTextPane (), message,
+        				   style, couleur, toolTip);
+    //On vérifie la fiche courante et on la met en jaune si neccesaire
+    if (panneauOnglet.getSelectedIndex () != NUM_FICHE_INFO)
+    {
+      changeCouleurOnglet (NUM_FICHE_INFO, COULEUR_FICHE_NEW);
+    }
+    // Verification que la fenetre n'est pas deja active, sinon on la fai clignoter
+    if (!this.isActive())
+     appli.getControleFenetre().startFlashPataCara(this);
+
+  }
 
    private int openConnection ()
    {
@@ -908,7 +916,7 @@ String StrAenvoyer = DIALOGUE                              + Membre.DELIM +
                                            clientSocket.getInputStream  ()));
        //on envoie son pseudo au serveur pour qu'il informe tout le monde
        //de son arrivé et pour mettre à jour les connectés
-           out.writeBytes (this.Pseud    + Membre.DELIM +
+           out.writeBytes (this.pseud    + Membre.DELIM +
                            (membre.homme ? Dialogue.Couleur [7]/*bleu*/
                                          : Dialogue.Couleur [5]/*rose*/)
                                          + Membre.DELIM +
@@ -963,10 +971,10 @@ String StrAenvoyer = DIALOGUE                              + Membre.DELIM +
 
 
    //fonction qui envoie au serveur le pseudo ignorer
-   private void EnvoieIgnorerServeur (String Pseudo)
+   private void envoieIgnorerServeur (String Pseudo)
    {
         //on l'ajoute dans la liste des ignorer
-        ListeIgnorer [NbIgnorer++] = Pseudo;
+        listeIgnorer [nbIgnorer++] = Pseudo;
 
         //envoie au serveur d'un string
         //pour prevenir l'ignorer de la chose
@@ -977,7 +985,7 @@ String StrAenvoyer = DIALOGUE                              + Membre.DELIM +
         {
             out.writeBytes (IGNORER + Membre.DELIM +
                             Pseudo  + Membre.DELIM +
-                            Pseud   + Membre.DELIM +
+                            pseud   + Membre.DELIM +
                             "\n");
             out.flush ();
         }
@@ -988,16 +996,16 @@ String StrAenvoyer = DIALOGUE                              + Membre.DELIM +
    } // EnvoieIgnorerServeur ()
 
 
-   private boolean EstIgnorer (String Pseudo)
+   private boolean EstIgnorer (String pseudo)
    {
        //on vérifie s'il est ignoré
-       for (int i = 0; i < NbIgnorer; ++i)
+       for (int i = 0; i < nbIgnorer; ++i)
        {
-           if (Pseudo.equals (ListeIgnorer [i]))
+           if (pseudo.equals (listeIgnorer [i]))
            {
                //Le pseudo est ignorer
-               System.out.println ("le pseudo : " + ListeIgnorer [i] +
-                                   " a été ignoré par :" + Pseud);
+               System.out.println ("le pseudo : " + listeIgnorer [i] +
+                                   " a été ignoré par :" + pseud);
                return true;
            }
        }

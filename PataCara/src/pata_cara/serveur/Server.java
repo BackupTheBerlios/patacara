@@ -10,22 +10,23 @@ package pata_cara.serveur;
  */
 
 
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.net.HttpURLConnection;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.StringTokenizer;
+import java.util.logging.Logger;
+
+import pata_cara.client.Dialogue;
+import pata_cara.client.Main;
 import pata_cara.client.Membre;
 import pata_cara.client.PataCara;
-import pata_cara.client.Main;
-import pata_cara.client.Dialogue;
-import java.net.ServerSocket;
-import java.io.BufferedOutputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.net.Socket;
-import java.util.Date;
-import java.util.StringTokenizer;
+import test.ServicePataCara;
+import util.http.RequeteHttp;
 
 
 public class Server
@@ -43,7 +44,19 @@ public class Server
     private String [] ligneSalon = new String [NBLIGNESALON];
     private int nbLigne = 0;
     
-    private static final String FICHIER_LOG_ERREUR = "log" + File.separator + "log_erreur.txt";
+    /* les fichiers log representé sous la forme reconnu par file Handler @see java.util.logging.FileHandler */
+    public static final String FICHIER_LOG_ERREUR = "log/Serveur_log_erreur_%g.txt";
+    public static final String FICHIER_LOG_INFO = "log/Serveur_log_info_%g.txt";
+    
+    /* Variable pour le site http */
+    private static final String HOST_HTTP = "http://patacara.berlios.de";
+    //private static final String HOST_HTTP = "http://patachou.dyndns.org/";
+    private static final String URL_MODIF_SERVEUR = HOST_HTTP + "/serveur/ModifEtatServeur.php";
+    private static final String START_SERVEUR  = "1";
+    private static final String STOP_SERVEUR   = "2";
+    private static final String ADD_CONNECT    = "3";
+    private static final String REMOVE_CONNECT = "4";
+    private static final String NOM_PARAMAETRE = "val";
 
 
     public Server ()
@@ -59,18 +72,23 @@ public class Server
      */
     public void stopServer ()
     {
+      
       //Envoi d'un message aux clients
       envoiInfoMessage("Le serveur PataCara s'est arrêté");
       
-      //On ferme la socket
+      
       try
       {
+        //On ferme tous les clients
+        closeAllClient();
+        // On ferme la socket
         serverSocket.close();
-        serverThread.interrupt();
+        serverThread.interrupt(); //interuption du thread qui va arreter le serveur et mettre a jour le site http
       }
       catch (IOException e)
       {
         e.printStackTrace();
+        logErreur("Exception dans stopServer", e);
       }
     }
     
@@ -92,6 +110,7 @@ public class Server
         catch (IOException e)
         {
           e.printStackTrace();
+          logErreur("Exception dans envoiInfoMessage", e);
         }
       }
       
@@ -133,10 +152,9 @@ public class Server
          }
          catch (java.io.IOException e)
          {
-             System.err.println ("L'exception suivante est intervenue dans la fonction addConnection : " +e);
-             e.printStackTrace();
+             logErreur("L'exception suivante est intervenue dans la fonction addConnection : ", e);
          }
-         System.out.println ("Nombre de connexion : " + client);
+         logInfo("Nombre de connexion : " + client);
     } /* addConnection () */
 
    public static void main (String [] arg)
@@ -159,13 +177,11 @@ public class Server
         }
         catch (java.io.IOException e)
         {
-            System.err.println ("L'exception suivante est intervenue dans la fonction removeConnection : " +e);
-            e.printStackTrace();
+            logErreur("L'exception suivante est intervenue dans la fonction removeConnection : ", e);
         }
 
         //une connection est arrété
-        //System.out.println ("Destruction de connexion");
-        System.out.println ("Nombre de connexion : " + client);
+        logInfo("Nombre de connexion : " + client);
 
     } /* removeConnection () */
 
@@ -192,8 +208,7 @@ public class Server
         }
         catch (java.io.IOException e)
         {
-            System.err.println ("L'exception suivante est intervenue dans la fonction start :" + e);
-            e.printStackTrace();
+            logErreur("L'exception suivante est intervenue dans la fonction start :", e);
             return;
         }
         //Apres creation  réussi du socket, un Tread est lancé
@@ -201,7 +216,10 @@ public class Server
         ServerThread tempThread = new ServerThread (serverSocket, this);
         this.serverThread = tempThread; //attention chgt
         tempThread.start ();
-        System.out.println ("Le serveur a été démarré avec succès");
+        logInfo("Le serveur a été démarré avec succès");
+        
+        //On informe le site que le serveur est lancé
+        informeSiteStartServeur ();
     } /* start () */
 
    public DataOutputStream getReceveur (String pseudo)
@@ -230,9 +248,9 @@ public class Server
            }
        }
        if (! trouve)
-       {   System.out.println ("L'indice du pseudo " + pseudo +
-           " n'as pas ete trouve dans la fonction ChercheRang");
-           i = -1;
+       {   
+       	 logInfo ("L'indice du pseudo " + pseudo + " n'as pas ete trouve dans la fonction ChercheRang");
+       	 i = -1;
        }
        return i;
    } /* ChercheRang () */
@@ -296,6 +314,9 @@ public class Server
             tabToolTip [client] = tool1;
       }
       ++client;
+      
+      //On prévient le site http d'un nouveau connecté.
+      informeSiteAddConnecte();
   } /* AjouterPseudo () */
 
   private int rechercherIndice (String nom)
@@ -322,6 +343,9 @@ public class Server
 
        }
        --client;
+
+       //On prévient le site http d'un départ d'un connecté.
+       informeSiteRemoveConnecte();
 
     } /* EffacerPseudo () */
 
@@ -354,11 +378,8 @@ public class Server
             }
             catch (java.io.IOException e)
             {
-                System.err.println ("L'exception suivante est intervenue dans la fonction2 TraitementText : "
-                                     + e);
-                 e.printStackTrace();
+                logErreur("L'exception suivante est intervenue dans la fonction2 TraitementText : ", e);
                 return;
-
             }
         }
         if (mot.equals (PataCara.DIALOGUE) && st.countTokens () > 6)
@@ -377,8 +398,8 @@ public class Server
                     int ind = chercheRang (emeteur);
                     if (-1 == ind) // l'emeteur du message n'a pas été trouvé
                     {
-                      System.err.println("On ne peut pas prevenir '" + emeteur +
-                                         "' que '" + recept + " est déconnecté\n");
+                      logErreur("On ne peut pas prevenir '" + emeteur +
+                          "' que '" + recept + " est déconnecté\n", null);
                       return;
                     }
                     //L'emeteur est bien là.
@@ -400,9 +421,7 @@ public class Server
             }
             catch (java.io.IOException e)
             {
-                System.err.println ("L'exception suivante est intervenue dans la fonction3 TraitementText : "
-                                     + e);
-                 e.printStackTrace();
+                 logErreur("L'exception suivante est intervenue dans la fonction3 TraitementText : ", e);
                 return;
 
             }
@@ -429,11 +448,8 @@ public class Server
                 }
                 catch (java.io.IOException e)
                 {
-                    System.err.println ("L'exception suivante est intervenue dans la fonction TraitementText (info) : "
-                                         + e);
-                     e.printStackTrace();
-                   return;
-
+                  logErreur("L'exception suivante est intervenue dans la fonction TraitementText (info) : ", e);
+                  return;
                 }
 
             }
@@ -477,31 +493,137 @@ public class Server
     */
    private static void log (String nomFichier, String message, Throwable exc)
    {
-     try
-    {
-      PrintStream stream = new PrintStream (new BufferedOutputStream (new FileOutputStream (nomFichier, true)));
-      stream.println(new Date ().toString () + message);
-      if (null != exc)
-        exc.printStackTrace(stream);
-      stream.flush();
-      stream.close();
+      Logger log = null;
+      if (nomFichier.equals(FICHIER_LOG_INFO))
+        log = ServicePataCara.LOGGER_INFO;
+      else
+        log = ServicePataCara.LOGGER_ERREUR;
       
-    }
-    catch (FileNotFoundException e)
-    {
-      e.printStackTrace();
-    }
+      if (null == log) //logger pas présent on utilise les sorties standarts
+      {
+        System.err.println (message + "\n");
+        exc.printStackTrace();
+        return;
+      }
+      //logger présent
+      if (exc != null)
+        log.info(message + "\n" + getStackTrace(exc));
+      else 
+        log.info(message);      
    }
    
    /**
-    * Fonction qui sert a loger les erreur du serveur PataCara.
+    * Fonction qui sert a loger les erreurs du serveur PataCara.
     * Les erreurs sont stockées dans le répertoire log.
     * @param message
     * @param exc
     */
-   public void logErreur (String message, Throwable exc)
+   public static void logErreur (String message, Throwable exc)
    {
      log (FICHIER_LOG_ERREUR, message, exc);
+   }
+
+   /**
+    * Fonction qui sert a loger les erreurs du serveur PataCara.
+    * Les erreurs sont stockées dans le répertoire log.
+    * @param message
+    */
+   public static void logInfo (String message)
+   {
+     log (FICHIER_LOG_INFO, message, null);
+   }
+   
+   /**
+    * Converti une stacktrace en chaine de caractere.
+    * @param aThrowable
+    * @return
+    */
+   public static String getStackTrace( Throwable aThrowable ) { 
+     Writer result = new StringWriter(); 
+     PrintWriter printWriter = new PrintWriter( result ); 
+     aThrowable.printStackTrace( printWriter ); 
+     return result.toString(); 
+   }
+   
+   
+   /**
+    * Ferme le flux de tous les clients connectés en vu d'une fermeture du serveur.
+    *
+    */
+   public void closeAllClient ()
+   {
+     for (int i = 0; i < client; i++)
+     {
+       try
+      {
+        tabOut [i].close();
+      }
+      catch (IOException e)
+      {
+        e.printStackTrace();
+      }
+     }
+   }
+   
+   
+   /**
+    * Informe le site URL_MODIF_SERVEUR d'une action
+    * @param action : START_SERVEUR, STOP_SERVEUR, ADD_CONNECT, REMOVE_CONNECT...
+    * @return true si l'url a peut etre accédé
+    */
+   private static boolean informeSite (String action)
+   {
+     try
+     {
+       String parametre = "";
+       parametre = RequeteHttp.encodeParametreRequete(parametre, NOM_PARAMAETRE, action);
+       HttpURLConnection conn = RequeteHttp.getConnexionHttpPost(URL_MODIF_SERVEUR, parametre, "patachou", "57yZYJAp");
+       return conn.getResponseCode() == 200;
+     }
+     catch (IOException e)
+     {
+       e.printStackTrace();
+     }
+     return false;     
+   }
+   
+   
+   /**
+    * Informe le site http que le serveur a été démarré.
+    *
+    */
+   public static boolean informeSiteStartServeur ()
+   {
+     return informeSite (START_SERVEUR);
+   }
+   
+   /**
+    * Informe le site http que le serveur est arreté.
+    *
+    */
+   public static boolean informeSiteStopServeur ()
+   {
+     return informeSite (STOP_SERVEUR);
+   }
+   
+   
+   /**
+    * Informe le site http qu'une personne vient de se connecter
+    *
+    */
+   public static boolean informeSiteAddConnecte ()
+   {
+     return informeSite (ADD_CONNECT);
+   }
+   
+   
+   /**
+    * Informe le site http qu'une personne vient de se déconnecter.
+    *
+    */
+   public static boolean informeSiteRemoveConnecte ()
+   {
+     return informeSite (REMOVE_CONNECT);
    }
 
 

@@ -23,23 +23,24 @@ class ServerThread extends Thread
     Server server              = null;
 
     public ServerThread (ServerSocket socket, Server server)
+  {
+    this.setServerSocket (socket);
+    this.setServer (server);
+    try
     {
-        this.setServerSocket (socket);
-        this.setServer (server);
-try
-{
-  System.out.println ("ServerThread constructeur, reuse addresse ? " + serverSocket.getReuseAddress());
-  serverSocket.setReuseAddress(true);
-}
-catch (SocketException e)
-{
-  e.printStackTrace();
-}
-    } /* ServerThread () */
+      if (!serverSocket.getReuseAddress()) //La socket ne peut pas etre réutilisée, il faut changer cette valeur pour pouvoir lancer plusieurs fois le serveur.
+        serverSocket.setReuseAddress (true);
+    }
+    catch (SocketException e)
+    {
+      e.printStackTrace ();
+      Server.logErreur("ServerThread constructeur socket exception : ", e);
+    }
+  } /* ServerThread () */
 
     public void run ()
     {
-System.out.println ("ServeurThread DEMARRE (" + Thread.currentThread().getName() + ")");
+		Server.logInfo("ServeurThread DEMARRE (" + Thread.currentThread().getName() + ")");
         //Socket pour la conection avec le client
         Socket clientSocket = null;
         try
@@ -54,10 +55,10 @@ System.out.println ("ServeurThread DEMARRE (" + Thread.currentThread().getName()
         }
         catch (java.io.IOException e)
         {
-            System.err.println ("L'exception suivante est intervenue : " + e);
-            e.printStackTrace();
+            Server.logErreur("Run ServeurThread : exception", e);
         }
-System.out.println ("ServeurThread TERMINE (" + Thread.currentThread().getName() + ")");
+		Server.logInfo("ServeurThread TERMINE (" + Thread.currentThread().getName() + ")");
+		
     } /* run () */
 
     private void setServer (Server tempServer)

@@ -38,9 +38,11 @@ public class ClientAppThread extends Thread
         }
         catch (java.io.IOException e)
         {
-            //System.err.println ("L'exception suivante est survenue ds fct run de ClientAppThread : " + e);
-            return;
+            System.err.println ("L'exception suivante est survenue ds fct run de ClientAppThread : " + e);
         }
+        //Le client est déconnecté
+        System.out.println ("Client déconnecté");
+        clientApp.envoyerMessageInfo("Vous avez été déconnecté(e) du serveur  ", Dialogue.ListStyle [3], java.awt.Color.red.darker(), "Connexion reset");
     }
 
 }

@@ -133,8 +133,6 @@ public class RequeteHttp
    * Permet d'effectuer une requete HTTP POST sur l'adresse addresse NON protégée par un fichier htaccess.
    * @param adresse l'adresse sur laquelle effectuer le doPost.
    * @param donnees la liste des parametres a donner à la requete :
-   * @param user le nom de l'utilisateur pour la page demandé
-   * @param pass le mot de passe pour l'utilisateur user
    * ex :
    * <pre>
    *   donnees = URLEncoder.encode("clef", "UTF-8")+
@@ -156,16 +154,6 @@ public class RequeteHttp
   /**
    * Permet d'effectuer une requete HTTP sur l'adresse addresse NON protégée par un fichier htaccess.
    * @param adresse l'adresse sur laquelle effectuer le doPost.
-   * @param donnees la liste des parametres a donner à la requete :
-   * @param user le nom de l'utilisateur pour la page demandé
-   * @param pass le mot de passe pour l'utilisateur user
-   * ex :
-   * <pre>
-   *   donnees = URLEncoder.encode("clef", "UTF-8")+
-   *             "="+URLEncoder.encode("valeur", "UTF-8");
-   *   donnees += "&"+URLEncoder.encode("autreClef", "UTF-8")+
-   *              "=" + URLEncoder.encode("autreValeur", "UTF-8");
-   * </pre>
    * @return la connexion établie.
    * @throws IOException si une quelque chose se passe mal.
    *         java.net.ConnectException: Connection refused: connect   -> si le site distant n'est pas accessible (connexion internet non existante, site inacessible...)

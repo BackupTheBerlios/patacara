@@ -1,4 +1,6 @@
 version 1.0.1 (Béta)
+  - Avertissement en cas de déconnexion du serveur.
+  - Ajout d'un popup à la connexion.
   - Correction bug connection
   - Clignotement de la fenetre (pour windows uniquement).
 

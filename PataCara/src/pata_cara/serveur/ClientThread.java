@@ -16,13 +16,12 @@ import pata_cara.client.PataCara;
 import java.net.Socket;
 import java.util.StringTokenizer;
 
-import org.apache.xpath.compiler.PsuedoNames;
 
 class ClientThread extends Thread
 {
-    Socket clientSocket  = null;
+    Socket clientSocket = null;
     Server server       = null;
-    private String Pseu        = null;
+    private String Pseu = null;
 
     public ClientThread (Socket socket, Server server)
     {
@@ -42,7 +41,7 @@ class ClientThread extends Thread
 
     public void run ()
     {
-System.out.println ("ClientThread DEMARRE (" + Thread.currentThread().getName() + ") -> " + Pseu);
+		Server.logInfo("ClientThread DEMARRE (" + Thread.currentThread().getName() + ") -> " + Pseu);
         java.lang.String data = null;
         try
         {
@@ -93,11 +92,8 @@ System.out.println ("ClientThread DEMARRE (" + Thread.currentThread().getName() 
 
            while ( (data = in.readLine () ) != null)
            {
-               System.out.println ("Message du client dans start ClientThread :"
-                                  + data);
-              //out.writeBytes (data+ "\n");
-              //out.flush ();
-              this.getServer ().traitementText (data);
+               Server.logInfo("Message du client dans start ClientThread :" + data);
+               this.getServer ().traitementText (data);
            }
            //Arreter la connection du client
            this.getClientSocket ().close ();
@@ -110,7 +106,8 @@ System.out.println ("ClientThread DEMARRE (" + Thread.currentThread().getName() 
             //on informe au server d'une deconnection du client!
             if (e.getMessage ().equals("Connection reset by peer: JVM_recv in socket input stream read"))
             {
-                System.err.println("Arret brutal du client : " + Pseu);
+                Server.logInfo("ClientThread run : Arret brutal du client (1) : " + Pseu);
+                Server.logErreur("ClientThread run : Arret brutal du client (1) : " + Pseu, null);
                 try
                 {
                     //Arreter la connection du client
@@ -120,14 +117,15 @@ System.out.println ("ClientThread DEMARRE (" + Thread.currentThread().getName() 
                 }
                 catch (java.io.IOException Exc)
                 {
-                    System.err.println("L'exception suivante est intervenue dans run ClientThread, arret brutal d'un client (JVM_recv in...) : " + Exc);
+                    Server.logErreur("L'exception suivante est intervenue dans run ClientThread, arret brutal d'un client (JVM_recv in...) : (1) ", Exc);
                 }
             }
             //si l'exception est la suivante : Connection reset by peer: JVM_recv in socket input stream read
             //on informe au server d'une deconnection du client!
             else if (e.getMessage ().equals("Connection reset"))
             {
-              System.err.println("Arret brutal du client : " + Pseu);
+              Server.logInfo("ClientThread run : Arret brutal du client (2) : " + Pseu);
+              Server.logErreur("ClientThread run : Arret brutal du client (2) : " + Pseu, null);
               try
               {
                   //Arreter la connection du client
@@ -137,16 +135,15 @@ System.out.println ("ClientThread DEMARRE (" + Thread.currentThread().getName() 
               }
               catch (java.io.IOException Exc)
               {
-                  System.err.println("L'exception suivante est intervenue dans run ClientThread, arret brutal d'un client (connection reset : " + Exc);
+                  Server.logErreur("L'exception suivante est intervenue dans run ClientThread, arret brutal d'un client (connection reset :  (2) ", Exc);
               }
             }
             else
             {
-              System.err.println ("L'exception suivante est intervenue dans run ClientThread : " + e);
-              e.printStackTrace();
+              Server.logErreur("L'exception suivante est intervenue dans run ClientThread : ", e);
             }
         }
-System.out.println ("ClientThread terminé (" + Thread.currentThread().getName() + ") -> " + Pseu);
+		Server.logInfo("ClientThread terminé (" + Thread.currentThread().getName() + ") -> " + Pseu);
     } /* run () */
 
     private void setServer (Server tempServer)
