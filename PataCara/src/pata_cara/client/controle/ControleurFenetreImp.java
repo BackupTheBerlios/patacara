@@ -69,7 +69,6 @@ public class ControleurFenetreImp
       
       //On initialise le flah qui est opérationnel sur ce system
       newFenetre.initFlashWindow();
-      newFenetre.startFlashFenetrePataCara();
 
     }
     else //Gestion sans systray
@@ -97,6 +96,9 @@ public class ControleurFenetreImp
     if (isSystrayOperationnel())
     {//gestion avec systray
 
+      //On retire tt clignotement eventuel
+      stopFlashPataCara(oldFenetre);
+      
       //On prévient qu'une fenetre a été retirée.
       setVisible(appli, true);
       systray.retireFenetrePataCara(oldFenetre);
@@ -238,6 +240,10 @@ public class ControleurFenetreImp
     if (!isSystrayOperationnel())
       return;
     systray.fenetrePataActivateWindow(fenetre);
+    
+    //Pour stopper le flash
+    stopFlashPataCara(fenetre);
+    
   } /* fenetrePataActivateWindow () */
 
 
@@ -285,15 +291,29 @@ public class ControleurFenetreImp
   } /* setVisible() */
 
 
-
+  /**
+   * La fenêtre fenetrePata souhaite se voir clignoter.
+   * @param fenetrePata la fenetre concernée.
+   */
   public void startFlashPataCara (PataCara fenetrePata)
   {
-
+    if (isSystrayOperationnel())
+    {
+      fenetrePata.startFlashFenetrePataCara();
+    }
   /* startFlashPataCara () */
   }
+  
+  /**
+   * La fenêtre fenetrePata souhaite se voir arreter de clignoter.
+   * @param fenetrePata la fenetre concernée.
+   */
   public void stopFlashPataCara (PataCara fenetrePata)
   {
-
+    if (isSystrayOperationnel())
+    {
+      fenetrePata.stopFlashFenetrePataCara();
+    }
   /* stopFlashPataCara () */
   }
   

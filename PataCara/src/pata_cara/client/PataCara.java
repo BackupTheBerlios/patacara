@@ -818,6 +818,10 @@ String StrAenvoyer = DIALOGUE                              + Membre.DELIM +
                  //de l'emmetteur pour mettre la couleur
                  if (panneauOnglet.getSelectedIndex() != index)
                          changeCouleurOnglet (index, COULEUR_FICHE_NEW);
+                 
+                 // Verification que la fenetre n'est pas deja active, sinon on la fai clignoter
+                 if (!this.isActive())
+                  appli.getControleFenetre().startFlashPataCara(this);
 
       //envoie du message chez le recepteur
                  envoyerMessageDialogue (getDialogue(pseudoAenv), pseudoAenv,
@@ -1004,7 +1008,8 @@ String StrAenvoyer = DIALOGUE                              + Membre.DELIM +
     */
    public void startFlashFenetrePataCara ()
    {
-     flashFenetrePataCara.startFlash();
+     if (null != flashFenetrePataCara)
+       flashFenetrePataCara.startFlashProgressif(10000, 500);
    } /* startFlashFenetrePatacara () */
 
    /**
@@ -1013,6 +1018,7 @@ String StrAenvoyer = DIALOGUE                              + Membre.DELIM +
     */
    public void stopFlashFenetrePataCara ()
   {
-    flashFenetrePataCara.stopFlash ();
+     if (null != flashFenetrePataCara)
+       flashFenetrePataCara.stopFlash ();
   } /* stopFlashFenetrePataCara () */
 }
