@@ -64,7 +64,7 @@ class ClientThread extends Thread
            String toolTip  = st.nextToken();
        //on envoie au client que le pseudo existe deja
            boolean rep;
-           out.writeBytes ((rep = this.getServer ().EstPseudoConnecter (Pseu))?
+           out.writeBytes ((rep = this.getServer ().estPseudoConnecter (Pseu))?
                            PataCara.FALSE + "\n" :
                             "true"         + "\n");
            out.flush ();
@@ -78,9 +78,9 @@ class ClientThread extends Thread
            out.flush ();
            for (int i = 0; i < clien; ++i)
            {
-               out.writeBytes (getServer ().TabPseudo  [i] + Membre.DELIM +
-                               getServer ().TabPseuCou [i] + Membre.DELIM +
-                               getServer ().TabToolTip [i] + "\n");
+               out.writeBytes (getServer ().tabPseudo  [i] + Membre.DELIM +
+                               getServer ().tabPseuCou [i] + Membre.DELIM +
+                               getServer ().tabToolTip [i] + "\n");
                out.flush ();
            }
 
@@ -94,7 +94,7 @@ class ClientThread extends Thread
                                   + data);
               //out.writeBytes (data+ "\n");
               //out.flush ();
-              this.getServer ().TraitementText (data);
+              this.getServer ().traitementText (data);
            }
            //Arreter la connection du client
            this.getClientSocket ().close ();

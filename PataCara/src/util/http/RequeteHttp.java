@@ -15,13 +15,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.Authenticator;
-import java.net.MalformedURLException;
+import java.net.ConnectException;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
+import java.net.UnknownHostException;
+
 
 
 
@@ -63,12 +66,14 @@ public class RequeteHttp
     conn.setDoOutput (true);
 
     //envoi de la requête
-    writer = new OutputStreamWriter (conn.getOutputStream ());
-    writer.write (donnees);
-    writer.flush ();
+    if (null != donnees)
+    {
+      writer = new OutputStreamWriter (conn.getOutputStream ());
+      writer.write (donnees);
+      writer.flush ();
 
-    writer.close ();
-
+      writer.close ();
+    }
     return conn.getInputStream ();
 
   }
@@ -88,9 +93,10 @@ public class RequeteHttp
    * </pre>
    * @return la connexion établie.
    * @throws IOException si une quelque chose se passe mal.
+   *         java.net.ConnectException: Connection refused: connect   -> si le site distant n'est pas accessible (connexion internet non existante, site inacessible...)
    * 
    */
-  public static URLConnection getConnexionHttpPost (final String adresse, String donnees, final String user, final String pass) throws IOException
+  public static HttpURLConnection getConnexionHttpPost (final String adresse, String donnees, final String user, final String pass) throws IOException
   {
 
     if (null != user && null != pass)
@@ -106,19 +112,69 @@ public class RequeteHttp
     //création de la connection
     URL url = new URL (adresse);
 
-    URLConnection conn = url.openConnection ();
+    HttpURLConnection conn = (HttpURLConnection) url.openConnection ();
     conn.setDoOutput (true);
 
+
     //envoi de la requête
-    writer = new OutputStreamWriter (conn.getOutputStream ());
-    writer.write (donnees);
-    writer.flush ();
+    if (null != donnees)
+    {
+      writer = new OutputStreamWriter (conn.getOutputStream ());
+      writer.write (donnees);
+      writer.flush ();
 
-    writer.close ();
-
+      writer.close ();
+    }
     return conn;
   }
+
   
+  /**
+   * Permet d'effectuer une requete HTTP POST sur l'adresse addresse NON protégée par un fichier htaccess.
+   * @param adresse l'adresse sur laquelle effectuer le doPost.
+   * @param donnees la liste des parametres a donner à la requete :
+   * @param user le nom de l'utilisateur pour la page demandé
+   * @param pass le mot de passe pour l'utilisateur user
+   * ex :
+   * <pre>
+   *   donnees = URLEncoder.encode("clef", "UTF-8")+
+   *             "="+URLEncoder.encode("valeur", "UTF-8");
+   *   donnees += "&"+URLEncoder.encode("autreClef", "UTF-8")+
+   *              "=" + URLEncoder.encode("autreValeur", "UTF-8");
+   * </pre>
+   * @return la connexion établie.
+   * @throws IOException si une quelque chose se passe mal.
+   *         java.net.ConnectException: Connection refused: connect   -> si le site distant n'est pas accessible (connexion internet non existante, site inacessible...)
+   * 
+   */
+  public static HttpURLConnection getConnexionHttpPost (final String adresse, String donnees) throws IOException
+  {
+    return getConnexionHttpPost (adresse, donnees, null, null);
+  }
+  
+
+  /**
+   * Permet d'effectuer une requete HTTP sur l'adresse addresse NON protégée par un fichier htaccess.
+   * @param adresse l'adresse sur laquelle effectuer le doPost.
+   * @param donnees la liste des parametres a donner à la requete :
+   * @param user le nom de l'utilisateur pour la page demandé
+   * @param pass le mot de passe pour l'utilisateur user
+   * ex :
+   * <pre>
+   *   donnees = URLEncoder.encode("clef", "UTF-8")+
+   *             "="+URLEncoder.encode("valeur", "UTF-8");
+   *   donnees += "&"+URLEncoder.encode("autreClef", "UTF-8")+
+   *              "=" + URLEncoder.encode("autreValeur", "UTF-8");
+   * </pre>
+   * @return la connexion établie.
+   * @throws IOException si une quelque chose se passe mal.
+   *         java.net.ConnectException: Connection refused: connect   -> si le site distant n'est pas accessible (connexion internet non existante, site inacessible...)
+   * 
+   */
+  public static HttpURLConnection getConnexionHttpPost (final String adresse) throws IOException
+  {
+    return getConnexionHttpPost (adresse, null, null, null);
+  }
   
 
   /**
@@ -161,20 +217,55 @@ public class RequeteHttp
   public static void main (String [] args)
   {
     String donnee = "";
+    String ip = null;
     try
     {
-      donnee = encodeParametreRequete (donnee, "valeur", "12");
-      donnee = encodeParametreRequete (donnee, "test", "toto");
+      ip = InetAddress.getLocalHost().getHostAddress ();
+    }
+    catch (UnknownHostException e1)
+    {
+      e1.printStackTrace();
+    }
+    System.out.println ("IP : " + ip);
+    try
+    {
+      donnee = encodeParametreRequete (donnee, "val", "PING");
+      //donnee = encodeParametreRequete (donnee, "test", "toto");
       System.out.println ("donne?" + donnee);
       
-      InputStream in = doPost("http://patachou:57yZYJAp@localhost/patacara/serveur/ModifEtatServeur.php", donnee);
-      //lecture de la réponse
-      BufferedReader reader = null;
-      reader = new BufferedReader (new InputStreamReader (in));
-      String ligne;
-      while ((ligne = reader.readLine ()) != null)
+      //InputStream in = doPost("http://localhost/patacara/serveur/ModifEtatServeur.php", donnee);
+
+      try
       {
-        System.out.println (ligne);
+        HttpURLConnection conn = getConnexionHttpPost (
+            "http://localhost/patacara/serveur/ModifEtatServeur.php", donnee,
+            "patachou", "57yZYJAp");
+        
+        int statutCode = conn.getResponseCode();
+        if (statutCode != 200)
+        {
+          if (statutCode == 401)
+            System.out.println ("Acces denied");
+          System.out.println ("Erreur statu : " + statutCode + ", message : " + conn.getResponseMessage());
+          return;
+        }
+        System.out.println ("Response : " + conn.getResponseCode ());
+        
+//System.out.println ("getcontent = " + ((sun.net.www.protocol.http.HttpURLConnection.HttpInputStream) conn.getContent ()));
+        //lecture de la réponse
+        BufferedReader reader = null;
+        reader = new BufferedReader (new InputStreamReader (conn
+            .getInputStream ()));
+        String ligne;
+        while ((ligne = reader.readLine ()) != null)
+        {
+          //System.out.println (ligne);
+        }
+      }
+      catch (ConnectException ex)
+      {
+        System.err.println ("Impossible de contacter l'hote");
+        ex.printStackTrace ();
       }
     }
     catch (IOException e)

@@ -16,6 +16,7 @@ import pata_cara.client.Main;
 import pata_cara.client.Dialogue;
 import java.net.ServerSocket;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.net.Socket;
 import java.util.StringTokenizer;
 
@@ -26,14 +27,14 @@ public class Server
     private ServerThread serverThread = null;
     private int client = 0;
     //TODO changer les portées
-    String TabPseudo  [] = new String [Main.MAX_MEMBRES];
-    String TabPseuCou [] = new String [Main.MAX_MEMBRES];
-    String TabToolTip [] = new String [Main.MAX_MEMBRES];
-    DataOutputStream TabOut [] = new DataOutputStream [Main.MAX_MEMBRES];
+    String tabPseudo  [] = new String [Main.MAX_MEMBRES];
+    String tabPseuCou [] = new String [Main.MAX_MEMBRES];
+    String tabToolTip [] = new String [Main.MAX_MEMBRES];
+    DataOutputStream tabOut [] = new DataOutputStream [Main.MAX_MEMBRES];
 
     private static final int NBLIGNESALON = 10;
-    private String [] LigneSalon = new String [NBLIGNESALON];
-    private int NbLigne = 0;
+    private String [] ligneSalon = new String [NBLIGNESALON];
+    private int nbLigne = 0;
 
 
     public Server ()
@@ -41,6 +42,50 @@ public class Server
         super ();
         start ();
     } /* Constructeur Server */
+    
+    
+    /**
+     * Stop le serveur
+     *
+     */
+    public void stopServer ()
+    {
+      //Envoi d'un message aux clients
+      envoiInfoMessage("Le serveur PataCara s'est arrêté");
+      
+      //On ferme la socket
+      try
+      {
+        serverSocket.close();
+      }
+      catch (IOException e)
+      {
+        e.printStackTrace();
+      }
+    }
+    
+    /**
+     * Envoi dans l'onglet info un message a tous les clients.
+     * @param message le message a envoyer.
+     */
+    public void envoiInfoMessage (final String message)
+    {
+      //Envoi d'un message au client
+      for (int i = 0; i < client; ++i)
+      {
+        try
+        {
+          tabOut [i].writeBytes(PataCara.INFO + Membre.DELIM +
+              message + "\n");
+          tabOut [i].flush();
+        }
+        catch (IOException e)
+        {
+          e.printStackTrace();
+        }
+      }
+      
+    }
 
     public void addConnection (Socket socket,
                                String Pseudo,
@@ -51,7 +96,7 @@ public class Server
         //une nouvelle connection est faite
 
         //mise a jours des tableaux
-        AjouterPseudo (Pseudo, out, Couleur, toolTip);
+        ajouterPseudo (Pseudo, out, Couleur, toolTip);
 
         //penser au envoi d'un nouveau connecté pour les autres et lui meme
         //0 pseudo
@@ -65,14 +110,14 @@ public class Server
         {
             for (int i = 0; i < client; ++i)
             {
-                TabOut [i].writeBytes (strAenvoyer + "\n");
-                TabOut [i].flush ();
+                tabOut [i].writeBytes (strAenvoyer + "\n");
+                tabOut [i].flush ();
             }
 
             //envoie des ligne dans le salon du nouvelle arrivant
-            for (int i = 0; i < NbLigne; ++i)
+            for (int i = 0; i < nbLigne; ++i)
             {
-                out.writeBytes (LigneSalon [i] + "\n");
+                out.writeBytes (ligneSalon [i] + "\n");
                 out.flush ();
             }
          }
@@ -91,15 +136,15 @@ public class Server
 
     public void removeConnection (Socket socket, String Pseudo)
     {
-        EffacerPseudo (Pseudo);
+        effacerPseudo (Pseudo);
         // detruire dans les tableaux la personne
         try
         {
             for (int i = 0; i < client; ++i)
             {
-                TabOut [i].writeBytes (PataCara.DEPART + Membre.DELIM +
+                tabOut [i].writeBytes (PataCara.DEPART + Membre.DELIM +
                                        Pseudo + "\n");
-                TabOut [i].flush ();
+                tabOut [i].flush ();
             }
         }
         catch (java.io.IOException e)
@@ -149,10 +194,10 @@ public class Server
         System.out.println ("Le serveur a été démarré avec succès");
     } /* start () */
 
-   public DataOutputStream GetReceveur (String Pseudo)
+   public DataOutputStream getReceveur (String Pseudo)
    {
        //fonction qui renvoie le bon flux de sortie
-       return TabOut [ChercheRang (Pseudo)];
+       return tabOut [chercheRang (Pseudo)];
    } /* GetReceveur () */
 
 
@@ -162,13 +207,13 @@ public class Server
     * @return l'indice (position ou rang) du pseudo dans le tableau,
     * -1 si pas trouvé.
     */
-   public int ChercheRang (String Pseudo)
+   public int chercheRang (String Pseudo)
    {
        boolean Trouve = false;
        int i = 0;
        for (; i < client; ++i)
        {
-           if (TabPseudo [i].equals (Pseudo))
+           if (tabPseudo [i].equals (Pseudo))
            {
                Trouve = true;
                break;
@@ -182,88 +227,88 @@ public class Server
        return i;
    } /* ChercheRang () */
 
-   void AjouterPseudo (String Nom,
-                       DataOutputStream out,
-                       String Couleur,
-                       String toolTip)
+   synchronized void  ajouterPseudo (String Nom,
+       								 DataOutputStream out,
+       								 String Couleur,
+       								 String toolTip)
    {
-       int pos = RechercherIndice (Nom);
+       int pos = rechercherIndice (Nom);
 
        if (client == 0 || client == pos)
        {
-           TabPseudo  [client] = Nom;
-           TabOut     [client] = out;
-           TabPseuCou [client] = Couleur;
-           TabToolTip [client] = toolTip;
+           tabPseudo  [client] = Nom;
+           tabOut     [client] = out;
+           tabPseuCou [client] = Couleur;
+           tabToolTip [client] = toolTip;
        }
        else
        {
-           String Temp1 = TabPseudo [pos];
+           String Temp1 = tabPseudo [pos];
            String Temp2 = null;
-           TabPseudo [pos] = Nom;
+           tabPseudo [pos] = Nom;
 //pareil pour TabOut
-            DataOutputStream T1 = TabOut [pos];
+            DataOutputStream T1 = tabOut [pos];
             DataOutputStream T2 = null;
-            TabOut [pos] = out;
+            tabOut [pos] = out;
 
 //pareil pour TabPseuCou
             String Cou2       = null;
-            String Cou1       = TabPseuCou [pos];
-            TabPseuCou [pos]  = Couleur;
+            String Cou1       = tabPseuCou [pos];
+            tabPseuCou [pos]  = Couleur;
 
 //pareil pour toolTip
             String tool2      = null;
-            String tool1      = TabToolTip [pos];
-            TabToolTip [pos]  = toolTip;
+            String tool1      = tabToolTip [pos];
+            tabToolTip [pos]  = toolTip;
 
 
            for (int i = pos+1; i < client; ++i)
            {
-               Temp2          = TabPseudo [i];
-               TabPseudo [i]  = Temp1;
+               Temp2          = tabPseudo [i];
+               tabPseudo [i]  = Temp1;
                Temp1          = Temp2;
 //pareil pour TabOut
-               T2             = TabOut [i];
-               TabOut [i]     = T1;
+               T2             = tabOut [i];
+               tabOut [i]     = T1;
                T1             = T2;
 //pareil pour TabPseuCou
-               Cou2           = TabPseuCou [i];
-               TabPseuCou [i] = Cou1;
+               Cou2           = tabPseuCou [i];
+               tabPseuCou [i] = Cou1;
                Cou1           = Cou2;
 //pareil pour TabToolTip
-               tool2          = TabToolTip [i];
-               TabToolTip [i] = tool1;
+               tool2          = tabToolTip [i];
+               tabToolTip [i] = tool1;
                tool1          = tool2;
             }
-            TabPseudo  [client] = Temp1;
-            TabOut     [client] = T1;
-            TabPseuCou [client] = Cou1;
-            TabToolTip [client] = tool1;
+            tabPseudo  [client] = Temp1;
+            tabOut     [client] = T1;
+            tabPseuCou [client] = Cou1;
+            tabToolTip [client] = tool1;
       }
       ++client;
   } /* AjouterPseudo () */
 
-  private int RechercherIndice (String Nom)
+  private int rechercherIndice (String Nom)
   {
     int i;
 
     for (i = 0; i < client; ++i)
     {
-         if ( Nom.compareTo(TabPseudo [i]) < 0)
+         if ( Nom.compareTo(tabPseudo [i]) < 0)
               break;
     }
      return i;
   } /* RechercheIndice () */
 
-   void EffacerPseudo (String pseudo)
+   synchronized void effacerPseudo (String pseudo)
    {
-       int rg = ChercheRang (pseudo);
+       int rg = chercheRang (pseudo);
        for (; rg < client - 1; ++rg)
        {
-          TabPseudo  [rg] = TabPseudo  [rg +1];
-          TabOut     [rg] = TabOut     [rg +1];
-          TabPseuCou [rg] = TabPseuCou [rg +1];
-          TabToolTip [rg] = TabToolTip [rg +1];
+          tabPseudo  [rg] = tabPseudo  [rg +1];
+          tabOut     [rg] = tabOut     [rg +1];
+          tabPseuCou [rg] = tabPseuCou [rg +1];
+          tabToolTip [rg] = tabToolTip [rg +1];
 
        }
        --client;
@@ -275,7 +320,7 @@ public class Server
         return client;
     }
 
-    public void TraitementText (String Message)
+    public void traitementText (String Message)
     {
         StringTokenizer st = new StringTokenizer (Message, Membre.DELIM);
         if (!st.hasMoreTokens ())
@@ -288,13 +333,13 @@ public class Server
         // on regarde si c'est pour le salon
         if (mot.equals (PataCara.SALON) && st.countTokens () > 5)
         {
-            SauvegardeSalon (Message);
+            sauvegardeSalon (Message);
             try
             {
                 for (int i = 0; i < client; ++i)
                 {
-                    TabOut [i].writeBytes (Message + "\n");
-                    TabOut [i].flush ();
+                    tabOut [i].writeBytes (Message + "\n");
+                    tabOut [i].flush ();
                 }
             }
             catch (java.io.IOException e)
@@ -311,7 +356,7 @@ public class Server
             try
             {
                 String Recept = st.nextToken ();
-                int rang = ChercheRang (Recept);
+                int rang = chercheRang (Recept);
                 if (-1 == rang)
                 {
                     //Le recepteur n'est plus connecté
@@ -319,7 +364,7 @@ public class Server
                     String Emeteur = st.nextToken ();
                            Emeteur = st.nextToken ();
                            Emeteur = st.nextToken ();
-                    int ind = ChercheRang (Emeteur);
+                    int ind = chercheRang (Emeteur);
                     if (-1 == ind) // l'emeteur du message n'a pas été trouvé
                     {
                       System.err.println("On ne peut pas prevenir '" + Emeteur +
@@ -327,7 +372,7 @@ public class Server
                       return;
                     }
                     //L'emeteur est bien là.
-                    TabOut [ind].writeBytes (PataCara.DIALOGUE     + Membre.DELIM +
+                    tabOut [ind].writeBytes (PataCara.DIALOGUE     + Membre.DELIM +
                                              Recept                 + Membre.DELIM +
                                              Dialogue.Couleur   [1] + Membre.DELIM +
                                              Dialogue.ListStyle [3] + Membre.DELIM +
@@ -335,12 +380,12 @@ public class Server
                                              Dialogue.Couleur [1]   + Membre.DELIM +
                                              "deconecté(e)"         + Membre.DELIM +
                                              "est deconnecté(e)"    + "\n");
-                     TabOut [ind].flush ();
+                     tabOut [ind].flush ();
                 }
                 else
                 {
-                    TabOut [rang].writeBytes (Message + "\n");
-                    TabOut [rang].flush ();
+                    tabOut [rang].writeBytes (Message + "\n");
+                    tabOut [rang].flush ();
                 }
             }
             catch (java.io.IOException e)
@@ -361,15 +406,15 @@ public class Server
 
             //String Pseudo = st.nextToken ();
             int rang;
-            if (-1 != (rang = ChercheRang (st.nextToken ())))
+            if (-1 != (rang = chercheRang (st.nextToken ())))
             {
                 //L'ignorer est bien présent
                 try
                 {
-                    TabOut [rang].writeBytes (PataCara.INFO + Membre.DELIM +
+                    tabOut [rang].writeBytes (PataCara.INFO + Membre.DELIM +
                                               "vous avez été ignoré(e) par " +
                                               st.nextToken () + "\n");
-                    TabOut [rang].flush ();
+                    tabOut [rang].flush ();
 
                 }
                 catch (java.io.IOException e)
@@ -387,26 +432,26 @@ public class Server
 
 
     //fonction qui sauvegarde les lignes du salon
-    public void SauvegardeSalon (String Ligne)
+    public void sauvegardeSalon (String Ligne)
     {
-        if (NbLigne < NBLIGNESALON)
-            LigneSalon [NbLigne++] = Ligne;
+        if (nbLigne < NBLIGNESALON)
+            ligneSalon [nbLigne++] = Ligne;
         else
         {
             //la premiere ligne doit partir
             for (int i = 0; i < NBLIGNESALON -1; ++i)
             {
-                LigneSalon [i] = LigneSalon [i+1];
+                ligneSalon [i] = ligneSalon [i+1];
             }
-            LigneSalon [NBLIGNESALON -1] = Ligne;
+            ligneSalon [NBLIGNESALON -1] = Ligne;
         }
    }/* SauvegardeSalon () */
 
-   public boolean EstPseudoConnecter (String Pseudo)
+   public boolean estPseudoConnecter (String Pseudo)
    {
        for (int i = 0; i < client; ++i)
        {
-           if (TabPseudo [i].equals (Pseudo))
+           if (tabPseudo [i].equals (Pseudo))
                return true;
        }
        return false;
