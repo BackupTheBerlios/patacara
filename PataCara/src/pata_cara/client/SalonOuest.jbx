@@ -1,0 +1,11 @@
+[PropertyInfo]
+ListChoixCouleur,JComboBox,false,false, , ,false,<default>
+ListChoixStyle,JComboBox,false,false, , ,false,<default>
+Nom,String,false,false, , ,false,<default>
+textField,JTextField,false,false, , ,false,<default>
+textPane,JTextPane,false,false, , ,false,<default>
+[IconNames]
+
+
+
+

@@ -1,0 +1,2 @@
+ant server
+pause

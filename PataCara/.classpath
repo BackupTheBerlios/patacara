@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="lib" path="Resources/looks-1.2.2.jar"/>
+	<classpathentry kind="lib" path="Resources/mysql-connector-java-2.0.14-bin.jar"/>
+	<classpathentry kind="lib" path="Resources/registry.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="output" path="classes"/>
+</classpath>

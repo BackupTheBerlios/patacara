@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!-- Fichier build.xml -->
+<!-- R. Giraud -->
+<!-- Projet Pata_Cara -->
+
+<project name="PataCara" default="build" basedir="..">
+
+<!-- Propriétés spécifiques et par défaut,
+à mettre obligatoirement dans cet ordre -->
+<property file="build.properties"/>
+<property file="default.properties"/>
+
+<property name="build.compiler" value="javac1.4"/>
+
+<property name="exclude.file.serveur" value="pata_cara/client/**,pata_cara/bdd/**,snoozesoft/systray4j/**, pata_cara/util/**"/>
+<property name="exclude.file.client" value="pata_cara/serveur/**"/>
+
+
+<!-- Classpath de l'application serveur-->
+<path id="server.classpath">
+    <pathelement location="serverSide"/>
+    <pathelement location="Resources/looks-1.2.2.jar"/>
+    <pathelement location="Resources/registry.jar"/>
+</path>
+
+
+<!-- Classpath de l'application client-->
+<path id="client.classpath">
+  	<pathelement location="."/>
+    <pathelement location="clientSide"/>
+    <pathelement location="Resources/mysql-connector-java-2.0.14-bin.jar"/>
+    <pathelement location="Resources/looks-1.2.2.jar"/>
+    <pathelement location="Resources/registry.jar"/>
+  </path>
+
+
+
+
+
+<target name="clean">
+  <!-- Supprime les fichiers construits -->
+  <delete dir="clientSide"/>
+  <delete dir="serverSide"/>
+  <delete dir="javadoc"/>
+  <delete dir="doc"/>
+
+  </target>
+
+<target name="javadoc" >
+   <javadoc destdir="doc">
+        <fileset dir="src">
+     </fileset>
+   </javadoc>
+</target>
+
+
+<!-- Exécution des applications -->
+
+
+
+<target name="server" depends="server.build"
+        description="Lance le serveur PataCara">
+  <java classname="pata_cara.serveur.Server" fork="yes">
+<!--  <jvmarg value="-Djava.security.policy=java.policy"/>
+  <arg value="demoserver"/> -->
+    <classpath refid="server.classpath"/>
+          </java>
+</target>
+
+<target name="client" depends="client.build"
+        description="Lance un client PataCara">
+  <java classname="pata_cara.client.Main" fork="yes">
+  <jvmarg value="-Djava.library.path=Resources/JNI"/>
+    <classpath refid="client.classpath"/>
+          </java>
+</target>
+
+
+<target name="server.build"
+        description="Compile toutes les classes de l'application Serveur">
+  <mkdir dir="serverSide"/>
+  <tstamp/>
+  <javac srcdir="src" destdir="serverSide" fork="yes"
+         excludes="${exclude.file.serveur}">
+	 		<classpath refid="server.classpath"/>
+   </javac>
+
+</target>
+
+<target name="client.build" depends="copieResourcesClient"
+        description="Compile toutes les classes de l'application Client">
+ <mkdir dir="clientSide"/>
+  <tstamp/>
+
+ <javac srcdir="src"
+        destdir="clientSide"
+        optimize="${optimize}"
+        fork="yes"
+        excludes="${exclude.file.client}">
+         			<classpath refid="client.classpath"/>
+	 </javac>
+</target>
+
+<target name="build" depends="server.build, client.build, javadoc">
+	<echo message="PataCara : compilation terminée avec succès."/>
+	<echo message="pour lancer le serveur : ant server"/>
+	<echo message="pour lancer le client : ant client"/>
+</target>
+
+<target name="serverClient" depends="clean, server, client"
+   description="Lance le serveur, puis le client">
+   <echo message="Lancement du serveur, puis du client">
+   </echo>
+</target>
+
+<target name="copieResourcesClient">
+  <copy todir="clientSide">
+    <fileset dir="src">
+      <include name="**/*.properties">
+      </include>
+    </fileset>
+  </copy>
+</target>
+
+</project>
+

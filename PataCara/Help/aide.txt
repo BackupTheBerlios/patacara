@@ -1,0 +1,11 @@
+##########################################
+#ACTION A REALISER POUR LANCER LE SERVEUR#
+##########################################
+
+-----INSTALLER EASY PHP
+
+
+-----BASE DE DONNéE
+Créer un nouvel utilisateur : tout serveur nom utilisateur pata_cara mdp patachou
+Créer une nouvelle base de donnée : pata_cara
+Ajouter la table dans le fichier : pata_cara.sql du repertoire SQL
