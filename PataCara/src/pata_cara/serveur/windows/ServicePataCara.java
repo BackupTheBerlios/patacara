@@ -17,6 +17,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -26,9 +28,11 @@ import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+import java.util.logging.StreamHandler;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JTextArea;
 import javax.swing.WindowConstants;
 
 import pata_cara.serveur.Server;
@@ -37,7 +41,7 @@ import util.http.RequeteHttp;
 
 /**
  * <p>Classe : ServicePataCara</p>.
- * <p>Description: </p>.
+ * <p>Description: Implémente toutes les fonctions nécessaires pour lancer automatiquement le serveur PataCara ainsi que la base de données</p>.
  */
 public class ServicePataCara
 {
@@ -57,8 +61,7 @@ public class ServicePataCara
     LOGGER_ERREUR = Logger.getLogger ("ServicePataCara.erreur");
     Handler fileHandler;
     try
-    {
-      //fileHandler = new StreamHandler (new FileOutputStream (Server.FICHIER_LOG_INFO), new SimpleFormatter ());
+    {      
       fileHandler = new FileHandler (Server.FICHIER_LOG_INFO, true);
       fileHandler.setFormatter(new SimpleFormatter ());
       LOGGER_INFO.addHandler(fileHandler);
@@ -96,22 +99,22 @@ public class ServicePataCara
   }
   
 
-  public static void main (String [] args) throws IOException 
-  {
-
-    ServicePataCara service = new ServicePataCara ();
-    Thread t = Thread.currentThread();
-    try
-    {
-      service.testAenlever(t);
-      //System.out.println ("Main terminé");
-    }
-    catch (InterruptedException e)
-    {
-      e.printStackTrace();
-    }
-    System.out.println ("Terminé");
-  }
+//  public static void main (String [] args) throws IOException 
+//  {
+//
+//    ServicePataCara service = new ServicePataCara ();
+//    Thread t = Thread.currentThread();
+//    try
+//    {
+//      service.testAenlever(t);
+//      //System.out.println ("Main terminé");
+//    }
+//    catch (InterruptedException e)
+//    {
+//      e.printStackTrace();
+//    }
+//    System.out.println ("Terminé");
+//  }
   
   public void testAenlever (final Thread t) throws IOException, InterruptedException
   {
@@ -136,6 +139,25 @@ public class ServicePataCara
     //System.out.println ("Main terminé");
     
   }
+  
+  
+  public static void afficheFenetreControle ()
+  {
+    JFrame f = new JFrame ("Console");
+    JTextArea myConsole = new JTextArea(); 
+    JTextAreaOutputStream outStream = new JTextAreaOutputStream(myConsole); 
+    JTextAreaOutputStream errStream = new JTextAreaOutputStream(myConsole); 
+    System.setOut(new PrintStream(outStream)); 
+    System.setErr(new PrintStream(errStream));
+    f.getContentPane().add(myConsole);
+    f.setBounds (0, 0, 400, 800);
+    f.setVisible(true);
+  }
+  
+  
+
+  
+  
   
   /**
    * Lance le service PataCara.
@@ -505,3 +527,66 @@ afficheMsg(p.getErrorStream());
   
 }
  // Classe ServicePataCara
+
+
+
+/**
+ * Un OutputStream vers un JTextArea. Utile pour redéfinir System.out
+ * et consorts vers un JTextArea.
+ * @see javax.swing.JTextArea
+ * @see java.io.OutputStream
+ * @author Glob
+ * @version 0.2
+ */
+class JTextAreaOutputStream extends OutputStream {
+   private JTextArea m_textArea = null;
+
+   /**
+    * Method JTextAreaOutputStream.
+    * @param aTextArea le JTextArea qui recevra les caractères.
+    */
+   public JTextAreaOutputStream(JTextArea aTextArea) {
+      m_textArea = aTextArea;
+   }
+
+   /**
+    * Écrit un caractère dans le JTextArea.
+    * Si le caractère est un retour chariot, scrolling.
+    * @see java.io.OutputStream#write(int)
+    */
+   public void write(int b) throws IOException {
+      byte[] bytes = new byte[1];
+      bytes[0] = (byte)b;
+      String newText = new String(bytes);
+      synchronized (m_textArea)
+      {
+      m_textArea.append(newText);
+      if (newText.indexOf('\n') > -1) {
+         try {
+            m_textArea.scrollRectToVisible(m_textArea.modelToView(
+                        m_textArea.getDocument().getLength()));
+         } catch (javax.swing.text.BadLocationException err) {
+            err.printStackTrace();
+         }
+      }
+      }
+   }
+
+   /**
+    * Écrit un tableau de bytes dans le JTextArea.
+    * Scrolling du JTextArea à la fin du texte ajouté.
+    * @see java.io.OutputStream#write(byte[])
+    */
+   public final void write(byte[] arg0) throws IOException {
+      String txt = new String(arg0);
+      synchronized (m_textArea)
+      {
+      m_textArea.append(txt);
+      try {
+         m_textArea.scrollRectToVisible(m_textArea.modelToView(m_textArea.getDocument().getLength()));
+      } catch (javax.swing.text.BadLocationException err) {
+         err.printStackTrace();
+      }
+      }
+   }
+}

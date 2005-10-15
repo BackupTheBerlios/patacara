@@ -82,8 +82,10 @@ public class Server
         //On ferme tous les clients
         closeAllClient();
         // On ferme la socket
-        serverSocket.close();
-        serverThread.interrupt(); //interuption du thread qui va arreter le serveur et mettre a jour le site http
+        if (null != serverSocket)
+          serverSocket.close();
+        if (null != serverThread)
+          serverThread.interrupt(); //interuption du thread qui va arreter le serveur et mettre a jour le site http
       }
       catch (IOException e)
       {
@@ -493,6 +495,7 @@ public class Server
     */
    private static void log (String nomFichier, String message, Throwable exc)
    {
+System.out.println ("" + message);
       Logger log = null;
       if (nomFichier.equals(FICHIER_LOG_INFO))
         log = ServicePataCara.LOGGER_INFO;
